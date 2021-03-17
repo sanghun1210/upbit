@@ -1,6 +1,8 @@
 import requests
 import json
 import time
+from candle import *
+from market import *
 
 def get_markets_all() : 
     url = "https://api.upbit.com/v1/market/all"
@@ -8,7 +10,7 @@ def get_markets_all() :
     response = requests.request("GET", url, params=querystring)
     return response.json()
 
-def get_markets(market_group_name) :
+def get_market_groups(market_group_name) :
     json_markets = get_markets_all()
     selected_markets = []
     for json_market in json_markets:
@@ -16,26 +18,25 @@ def get_markets(market_group_name) :
             selected_markets.append(json_market)
     return selected_markets
 
-
-def get_candle(coin_name) :
+def get_candles(market_name) :
     url = "https://api.upbit.com/v1/candles/minutes/1"
     #for list in json_res:
-    querystring = {"market": coin_name, "count": "1"}
+    querystring = {"market": market_name, "count": "1"}
     response = requests.request("GET", url, params=querystring)
     return response.json()
 
-
 def main():
     try:
-        market_list = get_markets("KRW")
-        for market in market_list:
-            candle = get_candle(market.get("market"))
-            print(candle)
+        market_group = get_market_groups("KRW")
+        for market in market_group:
+            candle = Candle(get_candles(market.get("market")))
+            if candle.is_nice(1.2):
+                candle.show()
+                nice_market = Market(candle.get_market_name())
+                nice_market.init()
             time.sleep(0.1)
-    except Exception as e:    # 모든 예외의 에러 메시지를 출력할 때는 Exception을 사용
+    except Exception as e:    
         print("raise error ", e)
-
-    
 
 if __name__ == "__main__":
     # execute only if run as a script
