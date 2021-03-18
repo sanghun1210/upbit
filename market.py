@@ -2,18 +2,20 @@ import os
 import jwt
 import uuid
 import hashlib
+import json
 from urllib.parse import urlencode
+from candle import *
 
 import requests
 
-access_key = 'H9ivtJHuRDDbHoLrjcZF1VzANakAl7jlMKUTBPwx'
-secret_key = '669PEGw3ExqC2a1gxyMguuRNjAXd0YcYVHBiHftC'
+access_key = 'y4YiH7yQ6IV7DH1kr8aaDxrNwrirvxqZxHRAY3gO'
+secret_key = 'nKowNJTxJ1xyTiQLLNZp1G6NKYP5txsR2OxDY1DV'
 server_url = 'https://api.upbit.com'
 
 class Market():
-    def __init__(self, market_name):
+    def __init__(self, market_name, current_price):
         self.market_name = market_name
-        self.bid_fee
+        self.current_price = current_price
 
     def check(self):
         query = {
@@ -37,18 +39,18 @@ class Market():
         headers = {"Authorization": authorize_token}
 
         res = requests.get(server_url + "/v1/orders/chance", params=query, headers=headers)
-
-        print(res.json())
-
+        #print(res.json())
 
     def bid(self, money):
+        volume = money / float(self.current_price)
         query = {
-            'market': ' ',
+            'market': self.market_name,
             'side': 'bid',
-            'volume': '0.01',
-            'price': '100.0',
+            'volume': str(volume),
+            'price': str(self.current_price),
             'ord_type': 'limit',
         }
+        print(query)
         query_string = urlencode(query).encode()
         m = hashlib.sha512()
         m.update(query_string)
