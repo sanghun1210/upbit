@@ -45,13 +45,13 @@ class Candle():
             else :
                 return self.candles[0].get("trade_price") 
 
-    def is_pumped(self):
+    def is_pumped(self, puped_ror):
         margin = self.candles[0].get("high_price") - self.candles[1].get("trade_price")
         if margin <= 0:
             return False 
 
         ror = (margin / self.candles[0].get("high_price")) * 100
-        if ror >= 2.2 : 
+        if ror >= puped_ror : 
             print("this pumped")
             return True
         return False

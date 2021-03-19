@@ -16,8 +16,9 @@ class Market():
     def __init__(self, market_name, current_price):
         self.market_name = market_name
         self.current_price = current_price
+        self.is_already_have_this = False
 
-    def check(self):
+    def is_already_have(self):
         query = {
             'market': self.market_name,
         }
@@ -39,9 +40,15 @@ class Market():
         headers = {"Authorization": authorize_token}
 
         res = requests.get(server_url + "/v1/orders/chance", params=query, headers=headers)
-        #print(res.json())
-
-    def bid(self, money):
+        print(res.json())
+        ask_account = res.json()["ask_account"]
+        coin_balance = ask_account["balance"]
+        print(coin_balance)
+        self.is_already_have_this = (coin_balance != '0.0')
+        print("is_already_have_this coin : ", self.is_already_have_this)
+        return self.is_already_have_this
+        
+    def bid(self, money):            
         volume = money / float(self.current_price)
         query = {
             'market': self.market_name,

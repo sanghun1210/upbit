@@ -20,26 +20,27 @@ def get_market_groups(market_group_name) :
     return selected_markets
 
 def is_nice_pattern(market_name):
-    if is_pattern_30minute_nice(market_name) :
-        time.sleep(0.2)
-        if is_pattern_5minute_nice(market_name) :
-            time.sleep(0.2)
-            if is_pattern_240minute_nice(market_name) : 
-                print("go bid", market_name)
-                return True
+    if is_pattern_30minute_nice(market_name) and is_pattern_5minute_nice(market_name) and is_pattern_240minute_nice(market_name) and is_pattern_day_nice(market_name) :
+        print("go bid", market_name)
+        return True
     return False
 
 def main():
     try:
-        is_bid = False
+        bid_count = 0
+        bid_count_max = 2
         market_group = get_market_groups("KRW")
-        while is_bid == False:
+        while bid_count < bid_count_max:
             for market in market_group:
                 market_name = market.get("market")
                 if is_nice_pattern(market_name):
                     nice_market = Market(market_name, get_bid_price(market_name))
-                    nice_market.bid(10000)
-                    is_bid = True
+                    if nice_market.is_already_have() == False:
+                        nice_market.bid(200000)
+                        bid_count = bid_count + 1
+                        print("bid count", bid_count)
+                        if bid_count >= bid_count_max:
+                            break                    
                 time.sleep(0.2)
             time.sleep(60)
     except Exception as e:    
