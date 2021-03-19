@@ -5,6 +5,14 @@ import requests
 from candle import *
 
 
+def get_week_candle_list(market_name) :
+    str_list = []
+    str_list.append("https://api.upbit.com/v1/candles/weeks")
+    url =  ''.join(str_list)
+    querystring = {"market": market_name, "count": "5"}
+    response = requests.request("GET", url, params=querystring)
+    return Candle(response.json())
+
 def get_day_candle_list(market_name) :
     str_list = []
     str_list.append("https://api.upbit.com/v1/candles/days")
@@ -42,7 +50,7 @@ def is_pattern_30minute_nice(market_name):
     margin = max_trade_price - current_trade_price
     if margin > 0 :
         ror = (margin / max_trade_price) * 100
-        if ror <= 5 and ror > 0.8 : 
+        if ror <= 4.2 and ror > 0.6 : 
             print("wow 30 : ", market_name)
             return True
     return False    
@@ -69,7 +77,13 @@ def is_pattern_day_nice(market_name):
     if candles.is_pumped(12):
         print("alredy pumped day")
         return False
-    return True
+
+    return candles.is_trade_price_goup2() 
+
+
+def is_pattern_weekend_nice(market_name):
+    candles = get_week_candle_list(market_name)
+    return candles.is_trade_price_goup2() 
 
     
     

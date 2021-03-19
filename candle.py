@@ -61,5 +61,8 @@ class Candle():
     
     def is_trade_price_goup(self):
         return self.candles[0].get("trade_price") > self.candles[1].get("trade_price") > self.candles[2].get("trade_price")
+
+    def is_trade_price_goup2(self):
+        return self.candles[0].get("trade_price") > self.candles[1].get("trade_price")
     
 
