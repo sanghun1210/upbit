@@ -13,9 +13,8 @@ secret_key = 'nKowNJTxJ1xyTiQLLNZp1G6NKYP5txsR2OxDY1DV'
 server_url = 'https://api.upbit.com'
 
 class Market():
-    def __init__(self, market_name, current_price):
+    def __init__(self, market_name):
         self.market_name = market_name
-        self.current_price = current_price
         self.is_already_have_this = False
 
     def is_already_have(self):
@@ -49,13 +48,12 @@ class Market():
         return self.is_already_have_this
         
     def bid(self, money):            
-        volume = money / float(self.current_price)
         query = {
             'market': self.market_name,
             'side': 'bid',
-            'volume': str(volume),
-            'price': str(self.current_price),
-            'ord_type': 'limit',
+            'volume': '',
+            'price': str(money),
+            'ord_type': 'price',
         }
         print(query)
         query_string = urlencode(query).encode()
