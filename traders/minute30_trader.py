@@ -31,11 +31,10 @@ class Minute30Trader(BaseTrader):
         if self.is_growup(3):
              return True
 
-        if self.candles[0].get_yangbong_rate() <= 5:
+        if self.candles[0].get_yangbong_rate() <= 4:
              return True
 
-
-        return True
+        return False
 
     
 

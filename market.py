@@ -39,12 +39,12 @@ class Market():
         headers = {"Authorization": authorize_token}
 
         res = requests.get(server_url + "/v1/orders/chance", params=query, headers=headers)
-        print(res.json())
+        #print(res.json())
         ask_account = res.json()["ask_account"]
         coin_balance = ask_account["balance"]
-        print(coin_balance)
+        # print(coin_balance)
         self.is_already_have_this = (coin_balance != '0.0')
-        print("is_already_have_this coin : ", self.is_already_have_this)
+        print("is_already_have_this coin : ", self.is_already_have_this, self.market_name)
         return self.is_already_have_this
         
     def bid(self, money):            

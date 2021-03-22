@@ -21,24 +21,15 @@ def get_candle_list(market_name, minute_unit, count) :
     return response.json()
 
 
-class Minute240Trader(BaseTrader):
+class Minute10Trader(BaseTrader):
     def __init__(self, market_name, count):
         super().__init__(market_name)
-        json_candles = get_candle_list(market_name, 240, count)
+        json_candles = get_candle_list(market_name, 10, count)
         self.create_candle_list_from_json(json_candles)
 
     def is_good_chart(self):
-        if self.is_double_floor() and self.is_goup(2):
-            return True
-
-        my_cal = Calculator(self.candles)
-        max_candle = my_cal.get_max_trade_price_candle()
-        if max_candle.index != 0 and self.is_growup(3) and self.is_goup(2):
-            return True 
-        
-        return False
-
-
+        if self.is_growup(3):
+             return True
 
     
 

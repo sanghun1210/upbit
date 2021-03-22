@@ -49,9 +49,6 @@ class BaseTrader():
         return my_cal.is_growup(count)
 
     def is_growup_uniform(self, count):
-        if self.market_name == "KRW-GRS":
-            print("chekc")
-        
         my_cal = Calculator(self.candles)
         return my_cal.is_growup_uniform(count)
 

@@ -20,13 +20,13 @@ class Calculator():
 
     def is_growup_avr(self, start):
         sum = 0
-        for i in range(start, start + 5): 
+        for i in range(start, start + 4): 
             sum = sum + self.candles[start + i].trade_price
-        return self.candles[start].trade_price >= (sum / 5)
+        return self.candles[start].trade_price >= (sum / 4)
 
     def is_goup(self, count):
         for i in range(0, count):
-            if self.candles[i].trade_price >= self.candles[i].trade_price + 1:
+            if self.candles[i].trade_price <= self.candles[i+1].trade_price :
                 return False
         return True
 

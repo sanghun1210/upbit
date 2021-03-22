@@ -7,7 +7,8 @@ from market import *
 from traders.week_trader import *
 from traders.day_trader import *
 from traders.minute240_trader import *
-from traders.minute30_trader import *
+from traders.minute60_trader import *
+from traders.minute10_trader import *
 
 def get_markets_all() : 
     url = "https://api.upbit.com/v1/market/all"
@@ -24,7 +25,7 @@ def get_market_groups(market_group_name) :
     return selected_markets
 
 def is_nice_pattern(market_name):
-    week_trader = WeekTrader(market_name, 5)
+    week_trader = WeekTrader(market_name, 6)
     if week_trader.is_good_chart() == False:
         return False
 
@@ -32,12 +33,16 @@ def is_nice_pattern(market_name):
     if day_trader.is_good_chart() == False:
         return False
 
-    minute240_trader = Minute240Trader(market_name, 20)
+    minute240_trader = Minute240Trader(market_name, 14)
     if minute240_trader.is_good_chart() == False:
         return False
 
-    minute30_trader = Minute30Trader(market_name, 10)
-    if minute30_trader.is_good_chart() == False:
+    minute60_trader = Minute60Trader(market_name, 14)
+    if minute60_trader.is_good_chart() == False:
+        return False
+
+    minute10_trader = Minute10Trader(market_name, 14)
+    if minute10_trader.is_good_chart() == False:
         return False
 
     return True
@@ -45,13 +50,13 @@ def is_nice_pattern(market_name):
 def main():
     try:
         bid_count = 0
-        bid_count_max = 10
+        bid_count_max = 1000
         loop_count = 0
         market_group = get_market_groups("KRW")
         while bid_count < bid_count_max:
             for market in market_group:
                 market_name = market.get("market")
-                if market_name == "KRW-XLM" or market_name == "KRW-KMD" or market_name == "KRW-SNT":
+                if market_name == "KRW-WAVES"or market_name == "KRW-XLM" or market_name == "KRW-EOS" or market_name == "KRW-XRP" or market_name == "KRW-TRX" or market_name == "KRW-QTUM":
                     continue
 
                 if is_nice_pattern(market_name):
@@ -65,7 +70,7 @@ def main():
                 time.sleep(0.2)
             loop_count = loop_count + 1
             print("loop_count : ", loop_count)
-            time.sleep(33)
+            time.sleep(40)
     except Exception as e:    
         print("raise error ", e)
 if __name__ == "__main__":
