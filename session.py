@@ -6,13 +6,6 @@ from market import *
 import logging
 from mail import *
 
-from traders.week_trader import *
-from traders.day_trader import *
-from traders.minute240_trader import *
-from traders.minute60_trader import *
-from traders.minute30_trader import *
-from traders.minute10_trader import *
-
 def get_markets_all() : 
     url = "https://api.upbit.com/v1/market/all"
     querystring = {"isDetails":"false"}

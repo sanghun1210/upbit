@@ -13,10 +13,34 @@ access_key = 'y4YiH7yQ6IV7DH1kr8aaDxrNwrirvxqZxHRAY3gO'
 secret_key = 'nKowNJTxJ1xyTiQLLNZp1G6NKYP5txsR2OxDY1DV'
 server_url = 'https://api.upbit.com'
 
+
+class balance():
+    def __init__(self, market_name):
+        self.currency = None
+        self.balance = None
+        self.locked = None
+        self.avg_buy_price = None
+        self.avg_buy_price_modified = None
+        self.unit_currency = None
+
 class Market():
     def __init__(self, market_name):
         self.market_name = market_name
         self.is_already_have_this = False
+
+    def get_total_balance(self):
+        payload = {
+        'access_key': access_key,
+        'nonce': str(uuid.uuid4()),
+        }
+
+        jwt_token = jwt.encode(payload, secret_key)
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
+
+        res = requests.get(server_url + "/v1/accounts", headers=headers)
+        print(res.json())
+
 
     def is_already_have(self):
         query = {

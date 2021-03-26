@@ -18,4 +18,8 @@ class Candle():
         rate = ((self.trade_price - self.opening_price) / self.trade_price) * 100
         return rate
 
+    def get_umbong_rate(self):
+        rate = ((self.opening_price - self.trade_price ) / self.opening_price) * 100
+        return rate
+
         
