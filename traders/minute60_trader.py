@@ -18,6 +18,7 @@ def get_candle_list(market_name, minute_unit, count) :
     url =  ''.join(str_list)
     querystring = {"market": market_name, "count": count}
     response = requests.request("GET", url, params=querystring)
+    time.sleep(0.1)
     return response.json()
 
 
@@ -30,7 +31,7 @@ class Minute60Trader(BaseTrader):
     def is_good_chart(self):
         if self.is_growup(3):
              return True
-        elif self.is_double_floor() :
+        elif self.is_double_floor(25) :
              return True
         return False
 

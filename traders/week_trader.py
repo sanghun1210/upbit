@@ -17,6 +17,7 @@ def get_week_candle_list(market_name, count) :
     url =  ''.join(str_list)
     querystring = {"market": market_name, "count": count}
     response = requests.request("GET", url, params=querystring)
+    time.sleep(0.1)
     return response.json()
 
 

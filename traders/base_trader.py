@@ -21,7 +21,7 @@ class BaseTrader():
             temp_cadle = Candle(i, json_candles[i])
             self.candles.append(temp_cadle)
 
-    def is_double_floor(self):
+    def is_double_floor(self, margin):
         my_cal = Calculator(self.candles)
         max_candle = my_cal.get_max_trade_price_candle()
         min_candle = my_cal.get_min_trade_price_candle()
@@ -35,11 +35,11 @@ class BaseTrader():
         else:
             index_diff = min_candle.index - max_candle.index
 
-        if index_diff  <= 2:
+        if index_diff  <= 1:
             return False
             
         margin = max_candle.trade_price - min_candle.trade_price
-        if (margin / max_candle.trade_price * 100) > 15:
+        if (margin / max_candle.trade_price * 100) > margin:
             return False
         
         return self.candles[0].trade_price >= self.candles[1].trade_price
@@ -55,6 +55,11 @@ class BaseTrader():
     def is_goup(self, count):
         my_cal = Calculator(self.candles)
         return my_cal.is_goup(count)
+
+    def is_pumped(self, index, rate):
+        return self.candles[index].is_yangbong() and self.candles[index].get_yangbong_rate() >= rate
+        
+
         
 
     

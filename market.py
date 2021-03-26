@@ -3,6 +3,7 @@ import jwt
 import uuid
 import hashlib
 import json
+import time
 from urllib.parse import urlencode
 from candle import *
 
@@ -45,6 +46,7 @@ class Market():
         # print(coin_balance)
         self.is_already_have_this = (coin_balance != '0.0')
         print("is_already_have_this coin : ", self.is_already_have_this, self.market_name)
+        time.sleep(0.1)
         return self.is_already_have_this
         
     def bid(self, money):            
