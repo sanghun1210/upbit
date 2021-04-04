@@ -11,17 +11,18 @@ def main():
         my_markets = get_my_markets()
 
         while True:
+            down_markets = []
             for market in my_markets:
                 if market.market_name == "KRW-KRW":
                     continue
 
-                if market.is_go_down1():
+                if market.is_go_down():
+                    down_markets.append(market.market_name)
                     print('haha - go to sell', market.market_name)
-                    now = datetime.datetime.now()
-                    str1 = 'haha - go to sell' + market.market_name
-                    send_mail(str1, market.market_name)
-                    print(now)
-            time.sleep(40)
+                    #market.ask(market.market_name)
+            if int(len(down_markets)) > 0:
+                send_mail(' '.join(down_markets),'go to sell')
+            time.sleep(250)
     except Exception as e:    
         print("raise error ", e)
 if __name__ == "__main__":

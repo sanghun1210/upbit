@@ -54,21 +54,10 @@ class MyMarket(BaseMarket):
         self.unit_currency = json.get("unit_currency")
         self.market_name = self.unit_currency + '-' + self.currency
 
-    def is_go_down1(self):
-        minute30_trader = Minute30Trader(self.market_name, 16)
-        minute15_trader = Minute15Trader(self.market_name, 16)
+    def is_go_down(self):
+        minute15_trader = Minute15Trader(self.market_name, 20)
+        return minute15_trader.is_go_down() 
 
-        if self.market_name == "KRW-BTC":
-            return minute15_trader.is_go_down(4) and minute30_trader.is_exist_long_umbong(3, 1.2)
-        else:
-            return minute15_trader.is_go_down(4) and minute30_trader.is_exist_long_umbong(3, 1.2)
-        return False
-
-    def is_go_down2(self):
-        minute10_trader = Minute10Trader(self.market_name, 20)
-        return minute10_trader.is_go_down_by_ma()
-
-        
     #매도
     def ask(self, market_name, money):            
         query = {
@@ -76,7 +65,7 @@ class MyMarket(BaseMarket):
             'side': 'bid',
             'volume': '',
             'price': str(money),
-            'ord_type': 'price',
+            'ord_type': 'market',
         }
         print(query)
         query_string = urlencode(query).encode()

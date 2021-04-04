@@ -31,6 +31,10 @@ class Minute15Trader(BaseTrader):
             return True
         return False
 
+    def is_go_down(self):
+        print('ma5, ma10',self.ma(5),  self.ma(10))
+        return self.ma(5) < self.ma(10) < self.ma(20)
+
 
     
 

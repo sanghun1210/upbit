@@ -37,14 +37,12 @@ class Minute240Trader(BaseTrader):
         
         return False
 
-    def is_go_down(self):
-        if self.is_double_floor(25) and self.is_goup(2):
-            return True
-
+    def is_stra_pattern(self):
         my_cal = Calculator(self.candles)
         max_candle = my_cal.get_max_trade_price_candle()
-        if max_candle.index != 0 and self.is_growup(3) and self.is_goup(2):
-            return True 
+        return max_candle.index > 1 and self.candles[1].is_yangbong() and self.candles[1].get_yangbong_rate() > 10 and self.candles[0].trade_price > self.candles[1].trade_price         
+
+    
 
 
 

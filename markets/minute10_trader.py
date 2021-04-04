@@ -27,12 +27,13 @@ class Minute10Trader(BaseTrader):
         self.create_candle_list_from_json(json_candles)
 
     def is_good_chart(self):
-        if self.is_growup(4) and self.is_pumped(0, 4) == False and self.is_pumped(1, 4) == False:
+        if self.is_growup(3) and self.is_pumped(0, 4) == False and self.is_pumped(1, 4) == False:
              return True
         return False
 
-    def is_go_down_by_ma(self):
-        return self.ma(5) < self.ma(10) < self.ma(20)
+    def is_go_down(self):
+        return self.ma(5) < self.ma(10)
+
 
     
 

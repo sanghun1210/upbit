@@ -12,14 +12,15 @@ def main():
         loop_count = 1
         while True:
             upbit_market = UpbitMarket()
-            print('1')
+
             best_market_names = upbit_market.find_best_markets()
             if int(len(best_market_names)) > 0 :
-                send_mail(' '.join(best_market_names), "go bid coin")
+                send_mail('\r\n'.join(best_market_names), "go bid coin")
                 now = datetime.datetime.now()
-                print('time : ', now,' ', ', '.join(best_market_names))
+                print('time : ', now,' ', '\r\n'.join(best_market_names))
             loop_count = loop_count + 1
-            time.sleep(50)
+            print('loop count', loop_count)
+            time.sleep(60)
     except Exception as e:    
         print("raise error ", e)
 if __name__ == "__main__":

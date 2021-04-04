@@ -34,7 +34,7 @@ class Calculator():
         sum = 0
         for i in range(0, index): 
             sum = sum + self.candles[0 + i].trade_price
-        return self.candles[0].trade_price <= (sum / index)
+        return sum / index
 
     def is_goup(self, count):
         for i in range(0, count + 1):

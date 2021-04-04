@@ -24,7 +24,15 @@ class BaseTrader():
     def ma(self, index):
         my_cal = Calculator(self.candles)
         return my_cal.ma(index)
-        
+
+    def is_go_up(self):
+        return (self.candles[0].trade_price > self.candles[1].trade_price) and (self.ma(5) > self.ma(10) > self.ma(20))
+
+    def is_go_up_with_volume(self):
+        my_cal = Calculator(self.candles)
+        if my_cal.is_growup(4):
+            return self.candles[1].candle_acc_trade_volume > self.candles[2].candle_acc_trade_volume > self.candles[3].candle_acc_trade_volume 
+        return False
 
     def is_double_floor(self, margin):
         my_cal = Calculator(self.candles)

@@ -23,6 +23,19 @@ class UpbitMarket(BaseMarket):
         super().__init__()
         self.market_group = None
 
+
+
+    def get_hoje_list(self):
+        #아침 9시 갱신 (코인 동향(BTC 매수세), UBCI 인덱스)
+        list_today = [ 'KRW-TON', 'KRW-ARK', 'KRW-WAVE', 'KRW-ARDR', 'KRW-ONT', 'KRW-CVC', 'KRW-META', 'KRW-DMT']
+
+        #저녁 8시 및 아침 9시 갱신
+        list4m = ['KRW-IOST', 'KRW-WAX', 'KRW-ENJ']
+        list407 = ['KRW-ATOM', 'KRW-ZIL']
+        list415 = ['KRW-LSK', 'KRW-POLY', 'KRW-THETA', 'KRW-TFUL', 'KRW-SOLVE']
+        list8m = ['KRW-IOST']
+        return list_today + list4m + list407 + list415 + list4m
+
     def get_markets_all(self) : 
         url = "https://api.upbit.com/v1/market/all"
         querystring = {"isDetails":"false"}
@@ -38,45 +51,110 @@ class UpbitMarket(BaseMarket):
         return selected_markets
 
     def is_nice_pattern(self, market_name):
-        week_trader = WeekTrader(market_name, 6)
-        if week_trader.is_good_chart() == False:
-            return False
+        # day_trader = DayTrader(market_name, 16)
+        # if day_trader.is_good_chart() == False:
+        #     return False
 
-        day_trader = DayTrader(market_name, 16)
-        if day_trader.is_good_chart() == False:
-            return False
-
+        # time.sleep(0.1)
         minute240_trader = Minute240Trader(market_name, 16)
         if minute240_trader.is_good_chart() == False:
             return False
 
+        time.sleep(0.1)
         minute60_trader = Minute60Trader(market_name, 16)
-        minute30_trader = Minute30Trader(market_name, 14)
-        if minute60_trader.is_good_chart() :
+        if minute60_trader.is_good_chart():
+            time.sleep(0.1)
             minute10_trader = Minute10Trader(market_name, 14)
             if minute10_trader.is_good_chart():
                 return True
 
-            minute15_trader = Minute15Trader(market_name, 14)
-            if minute15_trader.is_good_chart():
-                return True
-                
-        elif minute30_trader.is_good_chart():
-            minute10_trader = Minute10Trader(market_name, 14)
-            if minute10_trader.is_good_chart() == False:
-                return True
         return False
+
+    def is_stra_pattern(self, market_name):
+        time.sleep(0.1)
+        minute240_trader = Minute240Trader(market_name, 10)
+        if minute240_trader.is_stra_pattern() == False:
+            return False
+
+        time.sleep(0.1)
+        minute60_trader = Minute60Trader(market_name, 10)
+        return minute60_trader.is_growup(3)
+
+    def is_go_up_pattern(self, market_name):
+        day_trader = DayTrader(market_name, 20)
+        time.sleep(0.1)
+        minute240_trader = Minute240Trader(market_name, 20)
+        time.sleep(0.1)
+        minute15_trader = Minute15Trader(market_name, 20)
+        time.sleep(0.1)
+        minute30_trader = Minute30Trader(market_name, 20)
+        if day_trader.is_go_up() and minute240_trader.is_go_up() and minute15_trader.is_growup(4):
+            return True
+
+        if minute240_trader.is_go_up() and minute30_trader.is_go_up_with_volume():
+            return True
+
+        return False
+
+    def is_go_up_pattern_with_hoje(self, market_name):
+        hojes = self.get_hoje_list()
+        time.sleep(0.1)
+        minute240_trader = Minute240Trader(market_name, 20)
+        time.sleep(0.1)
+        minute30_trader = Minute30Trader(market_name, 20)
+
+        for hoje in hojes:
+            if hoje == market_name:
+                return minute240_trader.is_growup(4) and minute30_trader.is_growup(3)
+        return False
+
+    def is_go_up_pattern_by_ma(self, market_name):
+        day_trader = DayTrader(market_name, 20)
+        time.sleep(0.1)
+        minute240_trader = Minute240Trader(market_name, 20)
+        time.sleep(0.1)
+        minute15_trader = Minute15Trader(market_name, 20)
+        time.sleep(0.1)
+
+        return day_trader.is_go_up() and minute240_trader.is_go_up() and minute15_trader.is_go_up()
+
+    def is_go_up_pattern_by_volume(self, market_name):
+        minute240_trader = Minute240Trader(market_name, 20)
+        time.sleep(0.1)
+        minute30_trader = Minute30Trader(market_name, 20)
+        time.sleep(0.1)
+
+        return minute240_trader.is_go_up() and minute30_trader.is_go_up_with_volume()
 
     def find_best_markets(self):
         market_name_list = []
+        
         if self.market_group == None:
             self.market_group = self.get_market_groups("KRW")
         for market in self.market_group:
+            is_goup = False
             market_name = market.get("market")
+            print('checking...', market_name)
+            mail_to = ""
+            # if self.is_stra_pattern(market_name):
+            #     print('go_up_stra_pattern')
+            #     mail_to = mail_to + (market_name + ' (go_up_stra_pattern)')
+            #     is_goup = True
+
             if self.is_nice_pattern(market_name):
-                if self.is_already_have(market_name) == False:
-                    #print("go to bid")
-                    market_name_list.append(market_name)
+                print('is_nice_pattern')
+                mail_to = mail_to + (market_name + ' (is_nice_pattern)')
+                is_goup = True
+            if self.is_go_up_pattern_by_ma(market_name):
+                print('is_go_up_pattern_by_ma')
+                mail_to = mail_to + (market_name + ' (is_go_up_pattern_by_ma)')
+                is_goup = True
+            if self.is_go_up_pattern_by_volume(market_name):
+                print('is_go_up_pattern_by_volume')
+                mail_to = mail_to + (market_name + ' (is_go_up_pattern_by_volume)')
+                is_goup = True
+            if is_goup :
+                market_name_list.append(mail_to)
         return market_name_list
                 
     def is_already_have(self, market_name):
