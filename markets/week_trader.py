@@ -26,10 +26,6 @@ class WeekTrader(BaseTrader):
         json_candles = get_week_candle_list(market_name, count)
         self.create_candle_list_from_json(json_candles)
 
-    def is_good_chart(self):
-        return True
-        
-
     
 
 

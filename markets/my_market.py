@@ -55,8 +55,8 @@ class MyMarket(BaseMarket):
         self.market_name = self.unit_currency + '-' + self.currency
 
     def is_go_down(self):
-        minute15_trader = Minute15Trader(self.market_name, 20)
-        return minute15_trader.is_go_down() 
+        minute60_trader = Minute60Trader(self.market_name, 20)
+        return minute60_trader.is_go_down() 
 
     #매도
     def ask(self, market_name, money):            

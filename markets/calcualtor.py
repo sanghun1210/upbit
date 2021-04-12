@@ -37,7 +37,7 @@ class Calculator():
         return sum / index
 
     def is_goup(self, count):
-        for i in range(0, count + 1):
+        for i in range(0, count):
             if self.candles[i].trade_price <= self.candles[i+1].trade_price :
                 return False
         return True

@@ -17,11 +17,21 @@ from .minute30_trader import *
 from .minute15_trader import *
 from .minute10_trader import *
 from .minute5_trader import *
+from .minute3_trader import *
 
 class UpbitMarket(BaseMarket):
     def __init__(self):
         super().__init__()
         self.market_group = None
+        self.week_trader = None
+        self.day_trader = None
+        self.minute240_trader = None
+        self.minute60_trader = None
+        self.minute30_trader = None
+        self.minute15_trader = None
+        self.minute10_trader = None
+        self.minute5_trader = None
+        self.minute3_trader = None
 
     def get_markets_all(self) : 
         url = "https://api.upbit.com/v1/market/all"
@@ -57,79 +67,138 @@ class UpbitMarket(BaseMarket):
 
         return False
 
-    def is_stra_pattern(self, market_name):
-        time.sleep(0.1)
-        minute240_trader = Minute240Trader(market_name, 10)
-        if minute240_trader.is_stra_pattern() == False:
-            return False
+    #60분봉 기세확인 10분봉 고업드매수량
+    # 하락장에서는 비활성화
+    # 상승장 또는 횡보장에서는 유효하므로 다시 활성화를 고려한다.
+    # def is_60ma_up_with_volume10min(self):
+    #     return self.minute60_trader.is_ma_growup() and self.minute10_trader.is_goup_with_volume(3)
 
-        time.sleep(0.1)
-        minute60_trader = Minute60Trader(market_name, 10)
-        return minute60_trader.is_growup(3)
+    # def is_60ma_up_with_volume3min(self):
+    #     return self.minute60_trader.is_ma_growup() and self.minute3_trader.is_goup_with_volume(3)
 
-    def is_go_up_pattern(self, market_name):
-        day_trader = DayTrader(market_name, 20)
-        time.sleep(0.1)
-        minute240_trader = Minute240Trader(market_name, 20)
-        time.sleep(0.1)
-        minute15_trader = Minute15Trader(market_name, 20)
-        time.sleep(0.1)
-        minute30_trader = Minute30Trader(market_name, 20)
-        if day_trader.is_go_up() and minute240_trader.is_go_up() and minute15_trader.is_growup(4):
-            return True
+    # #30분봉 기세확인 5분봉 고업드매수량
+    # def is_30ma_up_with_volume5min(self):
+    #     return self.minute30_trader.is_ma_growup() and self.minute5_trader.is_goup_with_volume(3)
 
-        if minute240_trader.is_go_up() and minute30_trader.is_go_up_with_volume():
-            return True
+    # #240분봉 기세확인 1시간봉 고업위즈 매수량
+    # def is_240ma_up_with_volume60min(self):
+    #     return self.minute240_trader.is_ma_growup() and self.minute60_trader.is_goup_with_volume(3)
 
-        return False
+    # #240분봉 기세확인 1시간봉 고업위즈 매수량
+    # def is_240ma_up_with_volume30min(self):
+    #     return self.minute240_trader.is_ma_growup() and self.minute30_trader.is_goup_with_volume(3)
 
-    def is_go_up_pattern_with_hoje(self, market_name):
-        hojes = self.get_hoje_list()
-        time.sleep(0.1)
-        minute240_trader = Minute240Trader(market_name, 20)
-        time.sleep(0.1)
-        minute30_trader = Minute30Trader(market_name, 20)
+    # def is_240ma_up_with_volume15min(self):
+    #     return self.minute240_trader.is_ma_growup() and self.minute15_trader.is_goup_with_volume(3)
 
-        for hoje in hojes:
-            if hoje == market_name:
-                return minute240_trader.is_growup(4) and minute30_trader.is_growup(3)
-        return False
+    ######################################################################
 
-    def is_go_up_pattern_by_ma(self, market_name):
-        minute240_trader = Minute240Trader(market_name, 20)
+    def is_week_240min_30min_good(self):
+        return self.week_trader.is_goup_with_volume() and self.minute240_trader.is_goup_with_volume() and self.minute30_trader.is_goup_with_volume() and self.minute30_trader.is_ma_growup()
+
+    def is_week_60min_good(self):
+        return self.week_trader.is_goup_with_volume() and self.minute60_trader.is_goup_with_volume() and self.minute60_trader.is_ma_growup()
+
+    def is_day_30min_good(self):
+        return self.day_trader.is_goup_with_volume() and self.minute30_trader.is_goup_with_volume() and self.minute30_trader.is_ma_growup()
+
+    def is_week_day_15min_good(self):
+        return self.week_trader.is_goup_with_volume() and self.day_trader.is_goup_with_volume() and self.minute15_trader.is_goup_with_volume() and self.minute15_trader.is_ma_growup()
+
+    def init_traders(self, market_name):
+        self.week_trader = WeekTrader(market_name, 5)
         time.sleep(0.1)
-        minute60_trader = Minute60Trader(market_name, 20)
+        self.day_trader = DayTrader(market_name, 5)
         time.sleep(0.1)
-        minute5_trader = Minute5Trader(market_name, 20)
+        self.minute240_trader = Minute240Trader(market_name, 20)
+        time.sleep(0.1)
+        self.minute60_trader = Minute60Trader(market_name, 20)
+        time.sleep(0.1)
+        self.minute30_trader = Minute30Trader(market_name, 20)
+        time.sleep(0.1)
+        self.minute15_trader = Minute15Trader(market_name, 20)
+        time.sleep(0.1)
+        self.minute10_trader = Minute10Trader(market_name, 20)
+        time.sleep(0.1)
+        self.minute5_trader = Minute5Trader(market_name, 20)
+        time.sleep(0.1)
+        self.minute3_trader = Minute3Trader(market_name, 20)
         time.sleep(0.1)
 
-        return minute240_trader.is_go_up() and minute60_trader.is_go_up() and minute5_trader.is_go_up()
-
-    def is_go_up_pattern_by_volume(self, market_name):
-        minute240_trader = Minute240Trader(market_name, 20)
-        time.sleep(0.1)
-        minute60_trader = Minute60Trader(market_name, 20)
-        time.sleep(0.1)
-        return minute240_trader.is_go_up() and minute60_trader.is_go_up_with_volume()
-
-    def find_best_markets(self):
+    def find_best_markets(self, market_group_name):
         market_name_list = []
         
         if self.market_group == None:
-            self.market_group = self.get_market_groups("KRW")
+            self.market_group = self.get_market_groups(market_group_name)
+        
         for market in self.market_group:
             is_goup = False
             market_name = market.get("market")
-            print('checking...', market_name)
-            mail_to = ""
-            if self.is_go_up_pattern_by_ma(market_name):
-                print('is_go_up_pattern_by_ma')
-                mail_to = mail_to + (market_name + ' (is_go_up_pattern_by_ma)')
-                is_goup = True
-            if self.is_go_up_pattern_by_volume(market_name):
-                print('is_go_up_pattern_by_volume')
-                mail_to = mail_to + (market_name + ' (is_go_up_pattern_by_volume)')
-                is_goup = True
+
+            try:
+                print('checking...', market_name)
+                self.init_traders(market_name)
+                mail_to = ""
+
+                if self.is_week_240min_30min_good():
+                    print('nice!! - is_week_240min_30min_good')
+                    mail_to = mail_to + (market_name + ' (nice!! - is_week_240min_30min_good)')
+                    is_goup = True
+            
+                if self.is_week_60min_good():
+                    print('nice!! - is_week_60min_good')
+                    mail_to = mail_to + (market_name + ' (nice!! - is_week_60min_good)')
+                    is_goup = True
+
+                if self.is_day_30min_good():
+                    print('nice!! - is_day_30min_good')
+                    mail_to = mail_to + (market_name + ' (nice!! - is_day_30min_good)')
+                    is_goup = True
+
+                if self.is_week_day_15min_good():
+                    print('nice!! - is_week_day_15min_good')
+                    mail_to = mail_to + (market_name + ' (nice!! - is_week_day_15min_good)')
+                    is_goup = True
+
+            except Exception as e:
+                print("raise error ", e)
+
+            # if self.is_240ma_up_with_volume60min():
+            #     print('nice!! - is_240ma_up_with_volume60min')
+            #     mail_to = mail_to + (market_name + ' (is_240ma_up_with_volume60min)')
+            #     is_goup = True
+            
+            # if self.is_240ma_up_with_volume30min():
+            #     print('is_240ma_up_with_volume30min')
+            #     mail_to = mail_to + (market_name + ' (is_240ma_up_with_volume30min)')
+            #     is_goup = True
+
+            # if self.is_60_volume_5min_volumn():
+            #     print('is_60_volume_5min_volumn')
+            #     mail_to = mail_to + (market_name + ' (is_60_volume_5min_volumn)')
+            #     is_goup = True
+            
+            # if self.is_240ma_up_with_volume15min():
+            #     print('is_240ma_up_with_volume15min')
+            #     mail_to = mail_to + (market_name + ' (is_240ma_up_with_volume15min)')
+            #     is_goup = True
+
+            # if self.is_60ma_up_with_volume3min():
+            #     print('is_60ma_up_with_volume3min')
+            #     mail_to = mail_to + (market_name + ' (is_60ma_up_with_volume3min)')
+            #     is_goup = True
+
+            #4시간 봉 볼륨업 10분봉 볼륨업
+            # if self.is_240go_up_with_volume():
+            #      print('is_240go_up_with_volume')
+            #      mail_to = mail_to + (market_name + ' (is_240go_up_with_volume)')
+            #      is_goup = True
+
+            # if self.is_240go_up_with_volume():
+            #     print('is_240go_up_with_volume')
+            #     mail_to = mail_to + (market_name + ' (is_240go_up_with_volume)')
+            #     is_goup = True
+            
             if is_goup :
                 market_name_list.append(mail_to)
         return market_name_list
