@@ -29,11 +29,7 @@ class BaseTrader():
         return self.ma(5) > self.ma(10) > self.ma(20)
 
     def is_goup_with_volume(self):
-        if self.candles[0].trade_price > self.candles[1].trade_price and self.candles[0].candle_acc_trade_volume > self.candles[1].candle_acc_trade_volume:
-            return True
-        if self.candles[0].trade_price > self.candles[1].trade_price > self.candles[2].trade_price and self.candles[1].candle_acc_trade_volume > self.candles[2].candle_acc_trade_volume:
-            return True
-        return False
+        return self.candles[0].trade_price >= self.candles[1].trade_price and self.candles[0].candle_acc_trade_volume > self.candles[1].candle_acc_trade_volume
 
     def is_growup(self, count): 
         my_cal = Calculator(self.candles)
@@ -60,6 +56,9 @@ class BaseTrader():
 
     def is_go_down(self):
         return self.candles[0].trade_price < self.candles[1].trade_price < self.candles[2].trade_price
+
+    def is_pre_candle_yangbong(self):
+        return self.candles[1].is_yangbong()
 
         
 

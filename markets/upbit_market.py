@@ -94,16 +94,25 @@ class UpbitMarket(BaseMarket):
     ######################################################################
 
     def is_week_240min_30min_good(self):
-        return self.week_trader.is_goup_with_volume() and self.minute240_trader.is_goup_with_volume() and self.minute30_trader.is_goup_with_volume() and self.minute30_trader.is_ma_growup()
+        return self.week_trader.is_pre_candle_yangbong() and self.minute240_trader.is_goup_with_volume() and self.minute15_trader.is_ma_growup()
 
     def is_week_60min_good(self):
-        return self.week_trader.is_goup_with_volume() and self.minute60_trader.is_goup_with_volume() and self.minute60_trader.is_ma_growup()
+        return self.week_trader.is_pre_candle_yangbong() and self.minute60_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
+
+    def is_day_60min_good(self):
+        return self.day_trader.is_pre_candle_yangbong() and self.minute60_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
 
     def is_day_30min_good(self):
-        return self.day_trader.is_goup_with_volume() and self.minute30_trader.is_goup_with_volume() and self.minute30_trader.is_ma_growup()
+        return self.day_trader.is_pre_candle_yangbong() and self.minute30_trader.is_goup_with_volume() and self.minute3_trader.is_ma_growup()
 
-    def is_week_day_15min_good(self):
-        return self.week_trader.is_goup_with_volume() and self.day_trader.is_goup_with_volume() and self.minute15_trader.is_goup_with_volume() and self.minute15_trader.is_ma_growup()
+    def is_240min_30min_good(self):
+        return self.minute240_trader.is_pre_candle_yangbong() and self.minute30_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
+
+    def is_30min_goup_volume_5min_ma_good(self):
+        return self.minute30_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
+
+    def is_60min_goup_volume_10min_ma_good(self):
+        return self.minute60_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
 
     def init_traders(self, market_name):
         self.week_trader = WeekTrader(market_name, 5)
@@ -150,15 +159,31 @@ class UpbitMarket(BaseMarket):
                     mail_to = mail_to + (market_name + ' (nice!! - is_week_60min_good)')
                     is_goup = True
 
+                if self.is_day_60min_good():
+                    print('nice!! - is_day_60min_good')
+                    mail_to = mail_to + (market_name + ' (nice!! - is_day_60min_good)')
+                    is_goup = True
+
                 if self.is_day_30min_good():
                     print('nice!! - is_day_30min_good')
                     mail_to = mail_to + (market_name + ' (nice!! - is_day_30min_good)')
                     is_goup = True
 
-                if self.is_week_day_15min_good():
-                    print('nice!! - is_week_day_15min_good')
-                    mail_to = mail_to + (market_name + ' (nice!! - is_week_day_15min_good)')
+                if self.is_240min_30min_good():
+                    print('nice!! - is_240min_30min_good')
+                    mail_to = mail_to + (market_name + ' (nice!! - is_240min_30min_good)')
                     is_goup = True
+
+                if self.is_30min_goup_volume_5min_ma_good():
+                    print('nice!! - is_30min_goup_volume_5min_ma_good')
+                    mail_to = mail_to + (market_name + ' (nice!! - is_30min_goup_volume_5min_ma_good)')
+                    is_goup = True
+
+                if self.is_60min_goup_volume_10min_ma_good():
+                    print('nice!! - is_60min_goup_volume_10min_ma_good')
+                    mail_to = mail_to + (market_name + ' (nice!! - is_60min_goup_volume_10min_ma_good)')
+                    is_goup = True
+            
 
             except Exception as e:
                 print("raise error ", e)
