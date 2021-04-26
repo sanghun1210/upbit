@@ -26,10 +26,16 @@ class BaseTrader():
         return my_cal.ma(index)
 
     def is_ma_growup(self):
-        return self.ma(5) > self.ma(10) > self.ma(20)
+        return self.ma(5) > self.ma(15) 
 
-    def is_goup_with_volume(self):
-        return self.candles[0].trade_price >= self.candles[1].trade_price and self.candles[0].candle_acc_trade_volume > self.candles[1].candle_acc_trade_volume
+    def is_goup_with_volume(self) :
+        return self.candles[0].trade_price > self.candles[1].trade_price and self.candles[0].candle_acc_trade_volume > self.candles[1].candle_acc_trade_volume
+
+    def is_pre_goup_with_volume(self) :
+        return self.candles[1].trade_price > self.candles[2].trade_price and self.candles[1].candle_acc_trade_volume > self.candles[2].candle_acc_trade_volume
+        
+    def is_anomaly_candle(self) :
+        return self.candles[0].is_yangbong() and self.candles[0].candle_acc_trade_volume > (self.candles[1].candle_acc_trade_volume * 5)
 
     def is_growup(self, count): 
         my_cal = Calculator(self.candles)
@@ -59,6 +65,22 @@ class BaseTrader():
 
     def is_pre_candle_yangbong(self):
         return self.candles[1].is_yangbong()
+
+    def get_ma(self, count):
+        return self.ma(count)
+
+    def is_ma50_over_than_ma15(self):
+        return self.ma(50) > self.ma(15)
+
+    def get_ma_print(self):
+        if self.ma(50) > self.ma(15):
+            per = str(round(float(((self.ma(50) - self.ma(15)) / self.ma(50)) * 100), 2))
+            return str('+' + per + '(%)')
+        else:
+            per = str(round(float(((self.ma(15) - self.ma(50)) / self.ma(15)) * 100), 2))
+            return str('-' + per + '(%)')
+            
+
 
         
 

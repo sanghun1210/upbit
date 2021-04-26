@@ -18,6 +18,7 @@ from .minute15_trader import *
 from .minute10_trader import *
 from .minute5_trader import *
 from .minute3_trader import *
+from .minute1_trader import *
 
 class UpbitMarket(BaseMarket):
     def __init__(self):
@@ -32,6 +33,7 @@ class UpbitMarket(BaseMarket):
         self.minute10_trader = None
         self.minute5_trader = None
         self.minute3_trader = None
+        self.minute1_trader = None
 
     def get_markets_all(self) : 
         url = "https://api.upbit.com/v1/market/all"
@@ -93,136 +95,128 @@ class UpbitMarket(BaseMarket):
 
     ######################################################################
 
-    def is_week_240min_30min_good(self):
-        return self.week_trader.is_pre_candle_yangbong() and self.minute240_trader.is_goup_with_volume() and self.minute15_trader.is_ma_growup()
+    # def is_5min_anomaly_candle(self):
+    #     return self.minute5_trader.is_anomaly_candle()
 
-    def is_week_60min_good(self):
-        return self.week_trader.is_pre_candle_yangbong() and self.minute60_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
+    # def is_15min_anomaly_candle(self):
+    #     return self.minute15_trader.is_anomaly_candle()
 
-    def is_day_60min_good(self):
-        return self.day_trader.is_pre_candle_yangbong() and self.minute60_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
+    # def is_60min_anomaly_candle(self):
+    #     return self.minute60_trader.is_anomaly_candle()
 
-    def is_day_30min_good(self):
-        return self.day_trader.is_pre_candle_yangbong() and self.minute30_trader.is_goup_with_volume() and self.minute3_trader.is_ma_growup()
+    def is_15min_ma_growup(self):
+        return self.minute15_trader.is_ma_growup()
 
-    def is_240min_30min_good(self):
-        return self.minute240_trader.is_pre_candle_yangbong() and self.minute30_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
+    def is_30min_ma_growup(self):
+        return self.minute30_trader.is_ma_growup()
 
-    def is_30min_goup_volume_5min_ma_good(self):
-        return self.minute30_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
+    def is_60min_ma_growup(self):
+        return self.minute60_trader.is_ma_growup() 
+    
+    def is_240min_ma_growup(self):
+        return self.minute240_trader.is_ma_growup() 
 
-    def is_60min_goup_volume_10min_ma_good(self):
-        return self.minute60_trader.is_goup_with_volume() and self.minute5_trader.is_ma_growup()
+    def is_day_ma_growup(self):
+        return self.day_trader.is_ma_growup() 
 
     def init_traders(self, market_name):
         self.week_trader = WeekTrader(market_name, 5)
         time.sleep(0.1)
-        self.day_trader = DayTrader(market_name, 5)
+        self.day_trader = DayTrader(market_name, 50)
         time.sleep(0.1)
-        self.minute240_trader = Minute240Trader(market_name, 20)
+        self.minute240_trader = Minute240Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute60_trader = Minute60Trader(market_name, 20)
+        self.minute60_trader = Minute60Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute30_trader = Minute30Trader(market_name, 20)
+        self.minute30_trader = Minute30Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute15_trader = Minute15Trader(market_name, 20)
+        self.minute15_trader = Minute15Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute10_trader = Minute10Trader(market_name, 20)
+        self.minute10_trader = Minute10Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute5_trader = Minute5Trader(market_name, 20)
+        self.minute5_trader = Minute5Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute3_trader = Minute3Trader(market_name, 20)
+        self.minute3_trader = Minute3Trader(market_name, 50)
+        time.sleep(0.1)
+        self.minute1_trader = Minute1Trader(market_name, 50)
         time.sleep(0.1)
 
     def find_best_markets(self, market_group_name):
         market_name_list = []
         
-        if self.market_group == None:
-            self.market_group = self.get_market_groups(market_group_name)
-        
+        self.market_group = self.get_market_groups(market_group_name)
+            
         for market in self.market_group:
             is_goup = False
+            is_check = False
+            is_check15 = False
+            is_check30 = False
+            is_check60 = False
             market_name = market.get("market")
 
             try:
                 print('checking...', market_name)
                 self.init_traders(market_name)
-                mail_to = ""
+                mail_to = market_name + ':'
 
-                if self.is_week_240min_30min_good():
-                    print('nice!! - is_week_240min_30min_good')
-                    mail_to = mail_to + (market_name + ' (nice!! - is_week_240min_30min_good)')
+                if self.is_15min_ma_growup():
+                    ma_str = self.minute15_trader.get_ma_print()
+                    print(' - 15min : '+ ma_str)
+                    mail_to = mail_to + ' [ 15min : '+ ma_str + ' ]'
                     is_goup = True
-            
-                if self.is_week_60min_good():
-                    print('nice!! - is_week_60min_good')
-                    mail_to = mail_to + (market_name + ' (nice!! - is_week_60min_good)')
+                    is_check15 = self.minute15_trader.is_ma50_over_than_ma15()
+                        
+                if self.is_30min_ma_growup():
+                    ma_str = self.minute30_trader.get_ma_print()
+                    print(' - 30min : '+ ma_str)
+                    mail_to = mail_to + ' [ 30min : '+ ma_str + ' ]'
                     is_goup = True
+                    is_check30 = self.minute30_trader.is_ma50_over_than_ma15()
+                    
+                if self.is_60min_ma_growup():
+                    ma_str = self.minute60_trader.get_ma_print()
+                    print(' - 60min : '+ ma_str)
+                    mail_to = mail_to + ' [ 60min : '+ ma_str + ' ]'
+                    is_goup = True
+                    is_check60 = self.minute60_trader.is_ma50_over_than_ma15()
 
-                if self.is_day_60min_good():
-                    print('nice!! - is_day_60min_good')
-                    mail_to = mail_to + (market_name + ' (nice!! - is_day_60min_good)')
-                    is_goup = True
-
-                if self.is_day_30min_good():
-                    print('nice!! - is_day_30min_good')
-                    mail_to = mail_to + (market_name + ' (nice!! - is_day_30min_good)')
-                    is_goup = True
-
-                if self.is_240min_30min_good():
-                    print('nice!! - is_240min_30min_good')
-                    mail_to = mail_to + (market_name + ' (nice!! - is_240min_30min_good)')
-                    is_goup = True
-
-                if self.is_30min_goup_volume_5min_ma_good():
-                    print('nice!! - is_30min_goup_volume_5min_ma_good')
-                    mail_to = mail_to + (market_name + ' (nice!! - is_30min_goup_volume_5min_ma_good)')
+                if self.is_240min_ma_growup():
+                    ma_str = self.minute240_trader.get_ma_print()
+                    print(' - 240min : '+ ma_str)
+                    mail_to = mail_to + ' [ 240min : '+ ma_str + ' ]'
                     is_goup = True
 
-                if self.is_60min_goup_volume_10min_ma_good():
-                    print('nice!! - is_60min_goup_volume_10min_ma_good')
-                    mail_to = mail_to + (market_name + ' (nice!! - is_60min_goup_volume_10min_ma_good)')
+                if self.is_day_ma_growup():
+                    ma_str = self.day_trader.get_ma_print()
+                    print(' - day : '+ ma_str)
+                    mail_to = mail_to + ' [ day : '+ ma_str + ' ]'
                     is_goup = True
-            
 
+                if is_check15 == False and is_check30 == False and is_check60 == False:
+                    continue
+                else:
+                    mail_to = mail_to + ' => ' + str(self.minute10_trader.candles[0].trade_price)
+                    if is_check15 == True and is_check30 == True:
+                        print('go to buy!!!!')
+                        mail_to = mail_to + ' => go to buy!!!!'
+                    elif is_check60 == False and is_check30 == True:
+                        print('go to buy (+30, -60 short)')
+                        mail_to = mail_to + ' => go to buy (+30, -60 short)'
+                    elif is_check15 == True and self.minute60_trader.is_ma50_over_than_ma15() == False:
+                        print('go to buy (+15, -60 long)')
+                        mail_to = mail_to + ' => go to buy (+15, -60 long)'
+                    elif is_check60 == True and is_check30 == True:
+                        print('go to buy (+30, +60)')
+                        mail_to = mail_to + ' => go to buy (+30, +60)'
+                    elif is_check30 == True and self.minute240_trader.is_ma50_over_than_ma15() == False:
+                        print('go to buy (+30, -240)')
+                        mail_to = mail_to + ' => go to buy (+30, -240)'
+                    elif is_check60 == True and self.minute240_trader.is_ma50_over_than_ma15() == False:
+                        print('go to buy (+60, -240)')
+                        mail_to = mail_to + ' => go to buy (+60, -240)'
+                    
             except Exception as e:
                 print("raise error ", e)
-
-            # if self.is_240ma_up_with_volume60min():
-            #     print('nice!! - is_240ma_up_with_volume60min')
-            #     mail_to = mail_to + (market_name + ' (is_240ma_up_with_volume60min)')
-            #     is_goup = True
-            
-            # if self.is_240ma_up_with_volume30min():
-            #     print('is_240ma_up_with_volume30min')
-            #     mail_to = mail_to + (market_name + ' (is_240ma_up_with_volume30min)')
-            #     is_goup = True
-
-            # if self.is_60_volume_5min_volumn():
-            #     print('is_60_volume_5min_volumn')
-            #     mail_to = mail_to + (market_name + ' (is_60_volume_5min_volumn)')
-            #     is_goup = True
-            
-            # if self.is_240ma_up_with_volume15min():
-            #     print('is_240ma_up_with_volume15min')
-            #     mail_to = mail_to + (market_name + ' (is_240ma_up_with_volume15min)')
-            #     is_goup = True
-
-            # if self.is_60ma_up_with_volume3min():
-            #     print('is_60ma_up_with_volume3min')
-            #     mail_to = mail_to + (market_name + ' (is_60ma_up_with_volume3min)')
-            #     is_goup = True
-
-            #4시간 봉 볼륨업 10분봉 볼륨업
-            # if self.is_240go_up_with_volume():
-            #      print('is_240go_up_with_volume')
-            #      mail_to = mail_to + (market_name + ' (is_240go_up_with_volume)')
-            #      is_goup = True
-
-            # if self.is_240go_up_with_volume():
-            #     print('is_240go_up_with_volume')
-            #     mail_to = mail_to + (market_name + ' (is_240go_up_with_volume)')
-            #     is_goup = True
             
             if is_goup :
                 market_name_list.append(mail_to)
