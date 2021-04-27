@@ -71,6 +71,9 @@ class BaseTrader():
 
     def is_ma50_over_than_ma15(self):
         return self.ma(50) > self.ma(15)
+        
+    def get_ma_margin(self):
+        return round(float(((self.ma(50) - self.ma(15)) / self.ma(50)) * 100), 2)
 
     def get_ma_print(self):
         if self.ma(50) > self.ma(15):
