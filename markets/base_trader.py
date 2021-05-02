@@ -25,8 +25,22 @@ class BaseTrader():
         my_cal = Calculator(self.candles)
         return my_cal.ma(index)
 
+    def ma_volume(self, index):
+        total_volume = 0
+        for i in range(1, index):
+            total_volume = total_volume + self.candles[i].candle_acc_trade_volume
+        return total_volume / (index-1)
+
+    def is_ma_volume_up(self):
+        return self.candles[0].candle_acc_trade_volume > self.ma_volume(4) and self.candles[0].is_yangbong()
+
     def is_ma_growup(self):
+        # 기본 바꾸면 안됨.
         return self.ma(5) > self.ma(15) 
+    
+    def is_ma_growup_lite(self):
+        # 기본 바꾸면 안됨.
+        return self.candles[0].trade_price > self.ma(5) 
 
     def is_goup_with_volume(self) :
         return self.candles[0].trade_price > self.candles[1].trade_price and self.candles[0].candle_acc_trade_volume > self.candles[1].candle_acc_trade_volume
@@ -40,9 +54,6 @@ class BaseTrader():
     def is_growup(self, count): 
         my_cal = Calculator(self.candles)
         return my_cal.is_growup(count)
-
-    def is_pumped(self, index, rate):
-        return self.candles[index].is_yangbong() and self.candles[index].get_yangbong_rate() >= rate
 
     def is_go_down(self, count):
         my_cal = Calculator(self.candles)

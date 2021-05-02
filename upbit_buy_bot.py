@@ -22,8 +22,7 @@ def main():
             # best_market_names = upbit_market.find_best_markets('BTC')
             # if int(len(best_market_names)) > 0 :
             #     send_mail('\r\n'.join(best_market_names), "go market btc")
-            #     now = datetime.datetime.now()
-            #     print('time : ', now, ' ', '\r\n'.join(best_market_names))
+            #     now = datetime.dathow, ' ', '\r\n'.join(best_market_names))
             loop_count = loop_count + 1  
             time.sleep(150)
     except Exception as e:    

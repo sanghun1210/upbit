@@ -95,29 +95,12 @@ class UpbitMarket(BaseMarket):
 
     ######################################################################
 
-    # def is_5min_anomaly_candle(self):
-    #     return self.minute5_trader.is_anomaly_candle()
-
-    # def is_15min_anomaly_candle(self):
-    #     return self.minute15_trader.is_anomaly_candle()
-
-    # def is_60min_anomaly_candle(self):
-    #     return self.minute60_trader.is_anomaly_candle()
-
-    def is_15min_ma_growup(self):
-        return self.minute15_trader.is_ma_growup()
-
-    def is_30min_ma_growup(self):
-        return self.minute30_trader.is_ma_growup()
-
-    def is_60min_ma_growup(self):
-        return self.minute60_trader.is_ma_growup() 
-    
-    def is_240min_ma_growup(self):
-        return self.minute240_trader.is_ma_growup() 
-
-    def is_day_ma_growup(self):
-        return self.day_trader.is_ma_growup() 
+    def is_trader_growup(self, trader):
+        if trader.is_ma50_over_than_ma15() == False :
+            return trader.is_ma_growup_lite()
+        else :
+            return trader.is_ma_growup() 
+            
 
     def init_traders(self, market_name):
         self.week_trader = WeekTrader(market_name, 5)
@@ -136,10 +119,10 @@ class UpbitMarket(BaseMarket):
         time.sleep(0.1)
         self.minute5_trader = Minute5Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute3_trader = Minute3Trader(market_name, 50)
-        time.sleep(0.1)
-        self.minute1_trader = Minute1Trader(market_name, 50)
-        time.sleep(0.1)
+        # self.minute3_trader = Minute3Trader(market_name, 50)
+        # time.sleep(0.1)
+        # self.minute1_trader = Minute1Trader(market_name, 50)
+        # time.sleep(0.1)
 
     def find_best_markets(self, market_group_name):
         market_name_list = []
@@ -161,143 +144,81 @@ class UpbitMarket(BaseMarket):
                 self.init_traders(market_name)
                 mail_to = market_name + ':'
 
-                if self.minute5_trader.is_ma_growup():
-                    ma_str = self.minute5_trader.get_ma_print()
-                    print(' - 5min : '+ ma_str)
-                    mail_to = mail_to + ' [ 5min : '+ ma_str + ' ]'
-                    is_check5_growup = self.minute5_trader.is_ma50_over_than_ma15()
-
-                if self.is_15min_ma_growup():
+                if self.is_trader_growup(self.minute15_trader):
                     ma_str = self.minute15_trader.get_ma_print()
                     print(' - 15min : '+ ma_str)
-                    mail_to = mail_to + ' [ 15min : '+ ma_str + ' ]'
-                    is_check15_growup = self.minute15_trader.is_ma50_over_than_ma15()
+                    mail_to = mail_to + '[ 15min : '+ ma_str  
+                    if self.minute15_trader.is_ma_volume_up() : 
+                        mail_to = mail_to + ' v_up! ]'
+                    else :
+                        mail_to = mail_to + ' ]'
                         
-                if self.is_30min_ma_growup():
+                if self.is_trader_growup(self.minute30_trader):
                     ma_str = self.minute30_trader.get_ma_print()
                     print(' - 30min : '+ ma_str)
-                    mail_to = mail_to + ' [ 30min : '+ ma_str + ' ]'
-                    is_check30_growup = self.minute30_trader.is_ma50_over_than_ma15()
-                    
-                if self.is_60min_ma_growup():
+                    mail_to = mail_to + '[ 30min : '+ ma_str  
+                    if self.minute30_trader.is_ma_volume_up() : 
+                        mail_to = mail_to + ' v_up! ]'
+                    else :
+                        mail_to = mail_to + ' ]'
+
+                if self.is_trader_growup(self.minute60_trader):
                     ma_str = self.minute60_trader.get_ma_print()
                     print(' - 60min : '+ ma_str)
-                    mail_to = mail_to + ' [ 60min : '+ ma_str + ' ]'
-                    is_check60_growup = self.minute60_trader.is_ma50_over_than_ma15()
+                    mail_to = mail_to + '[ 60min : '+ ma_str  
+                    if self.minute60_trader.is_ma_volume_up() : 
+                        mail_to = mail_to + ' v_up! ]'
+                    else :
+                        mail_to = mail_to + ' ]'
 
-                if self.is_240min_ma_growup():
+                if self.is_trader_growup(self.minute240_trader):
                     ma_str = self.minute240_trader.get_ma_print()
                     print(' - 240min : '+ ma_str)
-                    mail_to = mail_to + ' [ 240min : '+ ma_str + ' ]'
-                    is_check240_growup = self.minute240_trader.is_ma50_over_than_ma15()
+                    mail_to = mail_to + '[ 240min : '+ ma_str  
+                    if self.minute240_trader.is_ma_volume_up() : 
+                        mail_to = mail_to + ' v_up! ]'
+                    else :
+                        mail_to = mail_to + ' ]'
 
-                if self.is_day_ma_growup():
+                if self.is_trader_growup(self.day_trader):
                     ma_str = self.day_trader.get_ma_print()
                     print(' - day : '+ ma_str)
-                    mail_to = mail_to + ' [ day : '+ ma_str + ' ]'
-                    is_checkday_growup = self.day_trader.is_ma50_over_than_ma15()
+                    mail_to = mail_to + '[ day : '+ ma_str  
+                    if self.day_trader.is_ma_volume_up() : 
+                        mail_to = mail_to + ' v_up! ]'
+                    else :
+                        mail_to = mail_to + ' ]'
 
-                
                 mail_to = mail_to + ' => ' + str(self.minute10_trader.candles[0].trade_price)
                 is_buy = False
                 max_count = 1
-                if is_check5_growup and self.minute5_trader.is_ma50_over_than_ma15():
-                    count = 0
-                    if self.minute15_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute30_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute60_trader.is_ma50_over_than_ma15(): count = count + 1
-                    if self.minute240_trader.is_ma50_over_than_ma15() and self.minute240_trader.get_ma_margin() < 4 : count = count + 1
-                    if self.day_trader.is_ma50_over_than_ma15() and self.day_trader.get_ma_margin() < 15 : count = count + 1
-                    if count == 0:
-                        print('5min go to check!!!!')
-                        mail_to = mail_to + ' => (+5min growup)'
-                        is_buy = True
 
-                if is_check15_growup and self.minute15_trader.is_ma50_over_than_ma15():
-                    count = 0
-                    if self.minute5_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute30_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute60_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute240_trader.is_ma50_over_than_ma15() and self.minute240_trader.get_ma_margin() < 5 : count = count + 1
-                    if self.day_trader.is_ma50_over_than_ma15() and self.day_trader.get_ma_margin() < 10 : count = count + 1
-                    if count == 0:
-                        print('15min go to check!!!!')
-                        mail_to = mail_to + ' => (+15min growup)'
-                        is_buy = True
-
-                if is_check30_growup and self.minute30_trader.is_ma50_over_than_ma15():
-                    count = 0
-                    if self.minute5_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute15_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute60_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute240_trader.is_ma50_over_than_ma15() and self.minute240_trader.get_ma_margin() < 5 : count = count + 1
-                    if self.day_trader.is_ma50_over_than_ma15() and self.day_trader.get_ma_margin() < 10 : count = count + 1
-                    if count == 0:
+                if self.is_trader_growup(self.minute15_trader):
+                    if self.is_trader_growup(self.minute30_trader) and self.is_trader_growup(self.minute5_trader):
                         print('30min go to check!!!!')
-                        mail_to = mail_to + ' => (+30min growup)'
-                        is_buy = True
-                
-                if is_check60_growup and self.minute60_trader.is_ma50_over_than_ma15():
-                    count = 0
-                    if self.minute5_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute15_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute30_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute240_trader.is_ma50_over_than_ma15() and self.minute240_trader.get_ma_margin() < 5 : count = count + 1
-                    if self.day_trader.is_ma50_over_than_ma15() and self.day_trader.get_ma_margin() < 10 : count = count + 1
-                    if count == 0:
+                        mail_to = mail_to + ' => (+15min)'
+                #        is_buy = True
+
+
+                if self.is_trader_growup(self.minute60_trader) :
+                    if self.is_trader_growup(self.minute240_trader) and self.is_trader_growup(self.minute30_trader):
                         print('60min go to check!!!!')
-                        mail_to = mail_to + ' => (+60min growup)'
-                        is_buy = True
+                        mail_to = mail_to + ' => (+60min)'
+                #        is_buy = True
 
-                if is_check240_growup and self.minute240_trader.is_ma50_over_than_ma15() and self.minute240_trader.get_ma_margin() < 2:
-                    count = 0
-                    if self.minute5_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute15_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute30_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.minute60_trader.is_ma50_over_than_ma15() : count = count + 1
-                    if self.day_trader.is_ma50_over_than_ma15() and self.day_trader.get_ma_margin() < 10 : count = count + 1
-                    if count == 0:
+                if self.is_trader_growup(self.minute240_trader) :
+                    if self.is_trader_growup(self.day_trader) and self.is_trader_growup(self.minute60_trader) :
                         print('240min go to check!!!!')
-                        mail_to = mail_to + ' => (+240min growup)'
+                        mail_to = mail_to + ' => (+240min)'
                         is_buy = True
 
+                # if self.is_trader_growup(self.minute240_trader) and self.is_trader_growup(self.minute60_trader):
+                #     # 앞으로의 미래를 주도할 코인
+                #     # 앞으로 꼭 가져갈 코인
+                #         print('day go to check!!!!')
+                #         mail_to = mail_to + ' (+ day)'
+                #         is_buy = True
 
-                # if is_check15_growup == True and is_check30_growup == True:
-                #     print('go to buy!!!!')
-                #     mail_to = mail_to + ' => (+15, +30)'
-                #     is_buy = True
-                # if is_check30_growup == True and self.minute60_trader.is_ma50_over_than_ma15() == False:
-                #     print('go to buy (+30, -60)')
-                #     mail_to = mail_to + ' => (+30, -60)'
-                #     is_buy = True
-                # if is_check15_growup == True and self.minute60_trader.is_ma50_over_than_ma15() == False and self.minute30_trader.is_ma50_over_than_ma15() == False:
-                #     print('go to buy (+15, -30, -60)')
-                #     mail_to = mail_to + ' => (+15, -30, -60)'
-                #     is_buy = True
-                # if is_check30_growup == True and self.minute240_trader.is_ma50_over_than_ma15() == False:
-                #     print('go to buy (+30, -240)')
-                #     mail_to = mail_to + ' => (+30, -240)'
-                #     is_buy = True
-                # if is_check60_growup == True and self.minute240_trader.is_ma50_over_than_ma15() == False:
-                #     print('go to buy (+60, -240)')
-                #     mail_to = mail_to + ' => (+60, -240)'
-                #     is_buy = True
-                # if self.minute30_trader.is_ma50_over_than_ma15() == False and self.minute60_trader.is_ma50_over_than_ma15() == False and self.minute15_trader.is_ma50_over_than_ma15() and is_check5_growup:
-                #      print('go to buy (+5min groupup total -)')
-                #      mail_to = mail_to + ' => (+5min groupup total -)'
-                #      is_buy = True
-                # if self.minute5_trader.is_ma50_over_than_ma15() == False and self.minute30_trader.is_ma50_over_than_ma15() == False and self.minute60_trader.is_ma50_over_than_ma15() and is_check15_growup:
-                #      print('go to buy (+15min groupup total -)')
-                #      mail_to = mail_to + ' => (+15min groupup total -)'
-                #      is_buy = True
-                # if self.minute5_trader.is_ma50_over_than_ma15() == False and self.minute15_trader.is_ma50_over_than_ma15() == False and self.minute60_trader.is_ma50_over_than_ma15() and is_check30_growup:
-                #      print('go to buy (+30min groupup total -)')
-                #      mail_to = mail_to + ' => (+30min groupup total -)'
-                #      is_buy = True
-                # if is_checkday_growup and self.day_trader.get_ma_margin() < 15:
-                #      print('go to buy (+day margin 10)')
-                #      mail_to = mail_to + ' => (+day margin 10)'
-                #      is_buy = True
                 if is_buy == False :
                     continue
 
