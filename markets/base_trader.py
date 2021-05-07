@@ -40,7 +40,7 @@ class BaseTrader():
     
     def is_ma_growup_lite(self):
         # 기본 바꾸면 안됨.
-        return self.candles[0].trade_price > self.ma(5) 
+        return self.candles[0].trade_price > self.ma(3) > self.ma(5) 
 
     def is_goup_with_volume(self) :
         return self.candles[0].trade_price > self.candles[1].trade_price and self.candles[0].candle_acc_trade_volume > self.candles[1].candle_acc_trade_volume
@@ -84,7 +84,10 @@ class BaseTrader():
         return self.ma(50) > self.ma(15)
         
     def get_ma_margin(self):
-        return round(float(((self.ma(50) - self.ma(15)) / self.ma(50)) * 100), 2)
+        if self.ma(50) > self.ma(15):
+            return round(float(((self.ma(50) - self.ma(15)) / self.ma(50)) * 100), 2)
+        else:
+            return round(float(((self.ma(15) - self.ma(50)) / self.ma(15)) * 100), 2)
 
     def get_ma_print(self):
         if self.ma(50) > self.ma(15):
