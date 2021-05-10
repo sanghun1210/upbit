@@ -75,105 +75,76 @@ class UpbitMarket(BaseMarket):
         if trader.is_ma50_over_than_ma15() == False :
             return trader.is_ma_growup_lite()
         else :
-            return trader.is_ma_growup() 
+            return trader.is_ma_growup()
             
 
     def init_traders(self, market_name):
-        self.week_trader = WeekTrader(market_name, 5)
+        # self.week_trader = WeekTrader(market_name, 5)
+        # time.sleep(0.1)
+        
+
+        self.minute5_trader = Minute5Trader(market_name, 50)
         time.sleep(0.1)
-        self.day_trader = DayTrader(market_name, 50)
-        time.sleep(0.1)
-        self.minute240_trader = Minute240Trader(market_name, 50)
-        time.sleep(0.1)
-        self.minute60_trader = Minute60Trader(market_name, 50)
+        # self.minute10_trader = Minute10Trader(market_name, 50)
+        # time.sleep(0.1)
+        self.minute15_trader = Minute15Trader(market_name, 50)
         time.sleep(0.1)
         self.minute30_trader = Minute30Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute15_trader = Minute15Trader(market_name, 50)
+        self.minute60_trader = Minute60Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute10_trader = Minute10Trader(market_name, 50)
+        self.minute240_trader = Minute240Trader(market_name, 50)
         time.sleep(0.1)
-        self.minute5_trader = Minute5Trader(market_name, 50)
-        time.sleep(0.1)
-        self.minute3_trader = Minute3Trader(market_name, 50)
-        time.sleep(0.1)
+        self.day_trader = DayTrader(market_name, 50)
+        # 
+        # self.minute3_trader = Minute3Trader(market_name, 50)
+        # time.sleep(0.1)
+
+        self.day_trader.set_child_trader(self.minute240_trader)
+        self.minute240_trader.set_child_trader(self.minute60_trader)
+        self.minute60_trader.set_child_trader(self.minute30_trader)
+        self.minute30_trader.set_child_trader(self.minute15_trader)
+        self.minute15_trader.set_child_trader(self.minute5_trader)
 
     def find_best_markets(self, market_group_name):
         market_name_list = []
         
         self.market_group = self.get_market_groups(market_group_name)
+        is_buy = False
             
         for market in self.market_group:
             market_name = market.get("market")
-            v_up5 = False
-            v_up10 = False
-            v_up15 = False
-            v_up30 = False
-            v_up60 = False
-            v_up240 = False
 
             try:
+                print('')
                 print('checking...', market_name)
                 self.init_traders(market_name)
-                mail_to = market_name + ':'
-
-
-                v_up_count = 0
-                if self.minute15_trader.is_goup_with_volume():
-                    v_up15 = True
-                    v_up_count = v_up_count + 1
-
-                if self.minute30_trader.is_goup_with_volume():
-                    v_up30 = True
-                    v_up_count = v_up_count + 1
-
-                if self.minute60_trader.is_goup_with_volume():
-                    v_up60 = True
-                    v_up_count = v_up_count + 1
-
-                # if self.minute240_trader.is_goup_with_volume():
-                #     v_up240 = True
-                #     v_up_count = v_up_count + 1
-                    
-                mail_to = mail_to + ' => ' + str(self.minute10_trader.candles[0].trade_price)
-                is_buy = False
-
-                if self.is_trader_growup(self.minute30_trader):
-                    if self.is_trader_growup(self.minute240_trader) :
-                        print('+30, +240min go to check!!!!')
-                        mail_to = mail_to + ' => (+30, +240min)'
-                        is_buy = True
-
-
-                if self.is_trader_growup(self.minute60_trader) :
-                    if self.is_trader_growup(self.day_trader)  :
-                        print('(+60, +day go to check!!!!')
-                        mail_to = mail_to + ' => (+60, +day)'
-                        is_buy = True
-
-                # if self.is_trader_growup(self.minute240_trader) :
-                #     if self.is_trader_growup(self.day_trader) and self.is_trader_growup(self.minute60_trader) :
-                #         print('240min go to check!!!!')
-                #         mail_to = mail_to + ' => (+240min)'
-                #         is_buy = True
-
-                # if self.is_trader_growup(self.minute240_trader) and self.is_trader_growup(self.minute60_trader):
-                #     # 앞으로의 미래를 주도할 코인
-                #     # 앞으로 꼭 가져갈 코인
-                #         print('day go to check!!!!')
-                #         mail_to = mail_to + ' (+ day)'
-                #         is_buy = True
-
-                if is_buy and v_up_count > 0:
-                    #log 기록
-                    print('write_database')
-                    self.write_log(market_name, str(self.minute15_trader.candles[0].trade_price))
-                    market_name_list.append(mail_to)
+                mail_to = market_name + ':'    
+                mail_to = mail_to + ' => ' + str(self.minute15_trader.candles[0].trade_price)
+                mail_list = ['', '', '']
+                
+                if self.day_trader.is_growup_chart1(mail_list):
+                    print(mail_list[0])
+                    mail_to = mail_to + mail_list[0]
+                    is_buy = True
+                elif self.minute240_trader.is_growup_chart1(mail_list):
+                    print(mail_list[0])
+                    mail_to = mail_to + mail_list[0]
+                    is_buy = True                
                 else:
                     continue
-                    
+
+                if is_buy :
+                    #log 기록
+                    print('write_database')
+                    print(mail_to)
+                    self.write_log(market_name, str(self.minute15_trader.candles[0].trade_price))
+                    market_name_list.append(mail_to)
+
             except Exception as e:
                 print("raise error ", e)
+
+        
             
         return market_name_list
 

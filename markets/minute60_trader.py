@@ -25,6 +25,7 @@ class Minute60Trader(BaseTrader):
         super().__init__(market_name)
         json_candles = get_candle_list(market_name, 60, count)
         self.create_candle_list_from_json(json_candles)
+        self.trader_name = 'Minute60Trader'
 
     def is_good_chart(self):
         if self.is_growup(3):

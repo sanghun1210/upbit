@@ -25,6 +25,7 @@ class DayTrader(BaseTrader):
         super().__init__(market_name)
         json_candles = get_day_candle_list(market_name, count)
         self.create_candle_list_from_json(json_candles)
+        self.trader_name = 'DayTrader'
 
     
 

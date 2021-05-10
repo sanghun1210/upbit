@@ -27,7 +27,7 @@ def get_anaylize_str(stats):
     for stat in stats:
         strlist.append(stat[0] + ' : ' + str(stat[1]))
         stat_count = stat_count + 1
-        if stat_count > 12:
+        if stat_count > 8:
             break;
     return '\r\n'.join(strlist)
 

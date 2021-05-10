@@ -9,11 +9,20 @@ from . import *
 
 from .candle import *
 from .calcualtor import *
+from enum import Enum
+
+class CoinState(Enum):
+    UP = 1
+    DOWN = 2
+    MA50_ABOVE_MA15 = 3
+    MA15_ABOVE_MA50 = 4
 
 class BaseTrader():
     def __init__(self, market_name):
         self.market_name = market_name
         self.candles = []
+        self.child = None
+        self.trader_name = ''
 
     def create_candle_list_from_json(self, json_candles):
         length = len(json_candles)
@@ -40,7 +49,7 @@ class BaseTrader():
     
     def is_ma_growup_lite(self):
         # 기본 바꾸면 안됨.
-        return self.candles[0].trade_price > self.ma(3) > self.ma(5) 
+        return self.ma(4) > self.ma(8) 
 
     def is_goup_with_volume(self) :
         return self.candles[0].trade_price > self.candles[1].trade_price and self.candles[0].candle_acc_trade_volume > self.candles[1].candle_acc_trade_volume
@@ -96,13 +105,26 @@ class BaseTrader():
         else:
             per = str(round(float(((self.ma(15) - self.ma(50)) / self.ma(15)) * 100), 2))
             return str('-' + per + '(%)')
-            
 
+    def set_child_trader(self, child):
+        self.child = child
 
-        
+    def is_growup_chart1(self, mail_list):
+        if self.child == None:
+            print('check : None' )
+            return False
 
-        
+        if self.is_ma50_over_than_ma15() == False:
+            if self.child.is_ma50_over_than_ma15() == False:
+                print('over :' + self.trader_name)
+                return self.child.is_growup_chart1(mail_list)
+            else:
+                if self.child.is_ma_growup() and self.child.get_ma_margin() < 0.15:
+                    print('check :' + self.trader_name)
+                    mail_list[0] = str(' UP! :' + self.trader_name + ' margin : ' +  str(self.child.get_ma_margin()))
+                    return True
+
+        return False
+
 
     
-
-
