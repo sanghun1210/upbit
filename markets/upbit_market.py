@@ -49,71 +49,58 @@ class UpbitMarket(BaseMarket):
                 selected_markets.append(json_market)
         return selected_markets
 
-    def is_nice_pattern(self, market_name):
-        # day_trader = DayTrader(market_name, 16)
-        # if day_trader.is_good_chart() == False:
-        #     return False
-
-        # time.sleep(0.1)
-        minute240_trader = Minute240Trader(market_name, 16)
-        if minute240_trader.is_good_chart() == False:
-            return False
-
-        time.sleep(0.1)
-        minute60_trader = Minute60Trader(market_name, 16)
-        if minute60_trader.is_good_chart():
-            time.sleep(0.1)
-            minute10_trader = Minute10Trader(market_name, 14)
-            if minute10_trader.is_good_chart():
-                return True
-
-        return False
-
     ######################################################################
 
-    def is_trader_growup(self, trader):
-        if trader.is_ma50_over_than_ma15() == False :
-            return trader.is_ma_growup_lite()
-        else :
-            return trader.is_ma_growup()
-            
+    def is_trader_growup(self, trader, max_margin):
+        if trader.is_ma_growup() and trader.get_ma_margin() <= max_margin:
+            return True
+        return False
 
+    def is_sub_trader_growup(self, trader):
+        if trader.is_ma_growup() or trader.is_ma50_over_than_ma15() == False:
+            return True
+        return False
+
+    def get_margin(self, a, b):
+        ma = 0
+        if a > b:
+            ma = ((a - b) / a) * 100
+        else : 
+            ma = ((b - a) / b) * 100
+        return ma
+
+    def is_convergence_section(self, trader, max_margin):
+        ma_list = [trader.ma(5), trader.ma(10), trader.ma(20), trader.ma(60), trader.ma(120)]
+        max_ma = max(ma_list)
+        min_ma = min(ma_list)
+        return self.get_margin(max_ma, min_ma) <= max_margin
+            
     def init_traders(self, market_name):
         # self.week_trader = WeekTrader(market_name, 5)
         # time.sleep(0.1)
-        
-
-        self.minute5_trader = Minute5Trader(market_name, 50)
+        self.minute5_trader = Minute5Trader(market_name, 120)
         time.sleep(0.1)
-        # self.minute10_trader = Minute10Trader(market_name, 50)
-        # time.sleep(0.1)
-        self.minute15_trader = Minute15Trader(market_name, 50)
+        self.minute10_trader = Minute10Trader(market_name, 120)
         time.sleep(0.1)
-        self.minute30_trader = Minute30Trader(market_name, 50)
+        self.minute15_trader = Minute15Trader(market_name, 120)
         time.sleep(0.1)
-        self.minute60_trader = Minute60Trader(market_name, 50)
+        self.minute30_trader = Minute30Trader(market_name, 120)
         time.sleep(0.1)
-        self.minute240_trader = Minute240Trader(market_name, 50)
+        self.minute60_trader = Minute60Trader(market_name, 120)
         time.sleep(0.1)
-        self.day_trader = DayTrader(market_name, 50)
-        # 
-        # self.minute3_trader = Minute3Trader(market_name, 50)
-        # time.sleep(0.1)
-
-        self.day_trader.set_child_trader(self.minute240_trader)
-        self.minute240_trader.set_child_trader(self.minute60_trader)
-        self.minute60_trader.set_child_trader(self.minute30_trader)
-        self.minute30_trader.set_child_trader(self.minute15_trader)
-        self.minute15_trader.set_child_trader(self.minute5_trader)
+        self.minute240_trader = Minute240Trader(market_name, 120)
+        time.sleep(0.1)
+        self.day_trader = DayTrader(market_name, 120)
 
     def find_best_markets(self, market_group_name):
         market_name_list = []
         
         self.market_group = self.get_market_groups(market_group_name)
-        is_buy = False
+        
             
         for market in self.market_group:
             market_name = market.get("market")
+            is_buy = False
 
             try:
                 print('')
@@ -121,18 +108,39 @@ class UpbitMarket(BaseMarket):
                 self.init_traders(market_name)
                 mail_to = market_name + ':'    
                 mail_to = mail_to + ' => ' + str(self.minute15_trader.candles[0].trade_price)
-                mail_list = ['', '', '']
+                      
+                if self.is_trader_growup(self.minute10_trader, 0.2):
+                    if self.is_sub_trader_growup(self.minute30_trader) and self.is_sub_trader_growup(self.minute60_trader):
+                        print(' +10min ')
+                        mail_to = mail_to + ' +10min '
+                        is_buy = True
+                        if self.is_convergence_section(self.minute5_trader, 0.8) or self.is_convergence_section(self.minute10_trader, 0.8) :
+                            mail_to = mail_to + ' convergence!'
+
                 
-                if self.day_trader.is_growup_chart1(mail_list):
-                    print(mail_list[0])
-                    mail_to = mail_to + mail_list[0]
-                    is_buy = True
-                elif self.minute240_trader.is_growup_chart1(mail_list):
-                    print(mail_list[0])
-                    mail_to = mail_to + mail_list[0]
-                    is_buy = True                
-                else:
-                    continue
+                if self.is_trader_growup(self.minute15_trader, 0.2):
+                    if self.is_sub_trader_growup(self.minute30_trader) and self.is_sub_trader_growup(self.minute60_trader):
+                        print(' +15min ')
+                        mail_to = mail_to + ' +15min '
+                        is_buy = True
+                        if self.is_convergence_section(self.minute5_trader, 0.8) or self.is_convergence_section(self.minute15_trader, 0.8) :
+                            mail_to = mail_to + ' convergence!'
+
+                if self.is_trader_growup(self.minute30_trader, 0.4):
+                    if self.is_sub_trader_growup(self.minute60_trader) and self.is_sub_trader_growup(self.minute240_trader):
+                        print(' +30min ')
+                        mail_to = mail_to + ' +30min '
+                        is_buy = True
+                        if self.is_convergence_section(self.minute15_trader, 0.8) or self.is_convergence_section(self.minute30_trader, 0.8) :
+                            mail_to = mail_to + ' convergence!'
+
+                if self.is_trader_growup(self.minute60_trader, 0.5):
+                    if self.is_sub_trader_growup(self.minute240_trader) and self.is_sub_trader_growup(self.day_trader):
+                        print(' +60min ')
+                        mail_to = mail_to + ' +60min '
+                        is_buy = True
+                        if self.is_convergence_section(self.minute30_trader, 0.8) or self.is_convergence_section(self.minute60_trader, 1) :
+                            mail_to = mail_to + ' convergence!'
 
                 if is_buy :
                     #log 기록
@@ -143,8 +151,6 @@ class UpbitMarket(BaseMarket):
 
             except Exception as e:
                 print("raise error ", e)
-
-        
             
         return market_name_list
 
