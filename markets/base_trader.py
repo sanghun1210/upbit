@@ -23,6 +23,7 @@ class BaseTrader():
         self.candles = []
         self.child = None
         self.trader_name = ''
+        self.cross_margin = 0.5
 
     def create_candle_list_from_json(self, json_candles):
         length = len(json_candles)
@@ -91,6 +92,10 @@ class BaseTrader():
 
     def is_ma50_over_than_ma15(self):
         return self.ma(50) > self.ma(15)
+
+
+    def is_golden_cross(self, cross_margin):
+        return self.is_ma50_over_than_ma15() and self.get_ma_margin() <= cross_margin
         
     def get_ma_margin(self):
         if self.ma(50) > self.ma(15):

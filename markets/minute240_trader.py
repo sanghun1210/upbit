@@ -26,27 +26,12 @@ class Minute240Trader(BaseTrader):
         json_candles = get_candle_list(market_name, 240, count)
         self.create_candle_list_from_json(json_candles)
         self.trader_name = 'Minute240Trader'
-
-    def is_good_chart(self):
-        if self.is_double_floor(25) and self.is_goup(2):
-            return True
-
-        my_cal = Calculator(self.candles)
-        max_candle = my_cal.get_max_trade_price_candle()
-        if max_candle.index != 0 and self.is_growup(3) and self.is_goup(2):
-            return True 
+        self.cross_margin = 0.8
         
-        return False
-
-    def is_stra_pattern(self):
-        my_cal = Calculator(self.candles)
-        max_candle = my_cal.get_max_trade_price_candle()
-        return max_candle.index > 1 and self.candles[1].is_yangbong() and self.candles[1].get_yangbong_rate() > 10 and self.candles[0].trade_price > self.candles[1].trade_price         
-
-    
-
 
 
     
+
+
 
 

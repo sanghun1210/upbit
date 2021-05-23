@@ -43,14 +43,14 @@ class MarketLog():
     def select_all_by_time(self):
         try:
             now = datetime.datetime.now()
-            if now.hour > 2:
-                now = now.replace(hour=now.hour - 2)
+            if now.hour > 6:
+                now = now.replace(hour=now.hour - 6)
             else:
                 now = now.replace(day=now.day - 1)
-                if now.hour + 22 == 24:
+                if now.hour + 18 == 24:
                     now = now.replace(hour=0)
                 else:
-                    now = now.replace(hour=now.hour + 22)
+                    now = now.replace(hour=now.hour + 18)
                 
             nowDatetime = now.strftime('%Y-%m-%d %H:%M:%S')
 

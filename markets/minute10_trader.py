@@ -26,6 +26,8 @@ class Minute10Trader(BaseTrader):
         json_candles = get_candle_list(market_name, 10, count)
         self.create_candle_list_from_json(json_candles)
         self.trader_name = 'Minute10Trader'
+        self.cross_margin = 0.3
+
 
     def is_good_chart(self):
         if self.is_growup(3) and self.is_pumped(0, 4) == False and self.is_pumped(1, 4) == False:

@@ -9,7 +9,7 @@ from markets.upbit_market import *
 from markets.market_log import *
 from sqlite3 import OperationalError, IntegrityError, ProgrammingError
 
-DB_name = 'myDB'
+DB_name = 'KRW_DB'
 
 def connect_to_db(db=None):
     if db is None:
@@ -27,7 +27,7 @@ def get_anaylize_str(stats):
     for stat in stats:
         strlist.append(stat[0] + ' : ' + str(stat[1]))
         stat_count = stat_count + 1
-        if stat_count > 8:
+        if stat_count > 12:
             break;
     return '\r\n'.join(strlist)
 
