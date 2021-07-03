@@ -28,9 +28,13 @@ class Minute30Trader(BaseTrader):
         self.trader_name = 'Minute30Trader'
         self.cross_margin = 0.4
 
-    def is_good_chart(self):
-        if self.is_goup(3):
-             return True
+    def check_pattern(self):
+        stdev = self.get_bollinger_bands_standard_deviation()
+        high_band = self.ma(20) + (stdev * 2)
+        low_band = self.ma(20) - (stdev * 2)
+        if self.get_margin(high_band, low_band) <= 5.5:
+            if self.get_margin(self.ma(12), self.ma(36)) < 1 and self.candles[0].trade_price >= high_band  :
+                return True
         return False
 
     

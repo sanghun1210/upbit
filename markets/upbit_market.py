@@ -50,17 +50,13 @@ class UpbitMarket(BaseMarket):
                 selected_markets.append(json_market)
         return selected_markets
 
-    ######################################################################
+    def is_main_trader_growup(self, trader, margin, max_range):
+        return trader.is_ma_growup() and (self.get_margin(trader.get_max_trade_price(max_range), trader.candles[0].trade_price) <= 1)
 
-    def is_trader_growup(self, trader):
-        return trader.ma(5) > trader.ma(15) 
-
-    def is_sub_trader_growup(self, trader, margin):
+    def is_sub_trader_growup(self, trader):
         if trader.is_ma_growup():
              return True
         if trader.ma(15) > trader.ma(50):
-            return True
-        elif trader.ma(50) - trader.ma(15) >= margin:
             return True
         return False
 
@@ -71,12 +67,6 @@ class UpbitMarket(BaseMarket):
             return True
         return False
 
-    def is_ma_growup(self, trader):
-        return trader.ma(5) > trader.ma(10) > trader.ma(20)
-
-    def is_ma_growup_long(self, trader):
-        return trader.ma(5) > trader.ma(60) > trader.ma(120)
-
     def get_margin(self, a, b):
         ma = 0
         if a > b:
@@ -85,41 +75,43 @@ class UpbitMarket(BaseMarket):
             ma = ((b - a) / b) * 100
         return ma
 
-    def is_convergence_section(self, trader, max_margin):
-        ma_list = [trader.ma(5), trader.ma(10), trader.ma(20), trader.ma(60), trader.ma(120)]
-        max_ma = max(ma_list)
-        min_ma = min(ma_list)
-        return self.get_margin(max_ma, min_ma) <= max_margin
 
-    def is_convergence_over(self, trader):
-        ma_list = [trader.ma(5), trader.ma(10), trader.ma(20), trader.ma(60), trader.ma(120)]
-        max_ma = max(ma_list)
-        return trader.candles[0].trade_price > trader.ma(120)
+    def is_nice_trader(self, trader):
+        stdev = trader.get_bollinger_bands_standard_deviation()
+        high_band = trader.ma(20) + (stdev * 2)
+        return trader.candles[0].trade_price < high_band and trader.ma(5) > trader.ma(50) and trader.is_max_trade_price(15)        
             
     def init_traders(self, market_name):
         # self.week_trader = WeekTrader(market_name, 5)
         # time.sleep(0.1)
         # self.minute1_trader = Minute1Trader(market_name, 120)
         # time.sleep(0.1)
-        self.minute3_trader = Minute3Trader(market_name, 120)
-        time.sleep(0.1)
-        self.minute5_trader = Minute5Trader(market_name, 120)
-        time.sleep(0.1)
-        self.minute10_trader = Minute10Trader(market_name, 120)
-        time.sleep(0.1)
-        self.minute15_trader = Minute15Trader(market_name, 120)
-        time.sleep(0.1)
+        # self.minute3_trader = Minute3Trader(market_name, 120)
+        # time.sleep(0.1)
+        # self.minute5_trader = Minute5Trader(market_name, 120)
+        # time.sleep(0.1)
+        # self.minute10_trader = Minute10Trader(market_name, 120)
+        # time.sleep(0.1)
+        # self.minute15_trader = Minute15Trader(market_name, 120)
+        # time.sleep(0.1)
         self.minute30_trader = Minute30Trader(market_name, 120)
         time.sleep(0.1)
         self.minute60_trader = Minute60Trader(market_name, 120)
         time.sleep(0.1)
-        self.minute240_trader = Minute240Trader(market_name, 50)
+        self.minute240_trader = Minute240Trader(market_name, 120)
         time.sleep(0.1)
-        self.day_trader = DayTrader(market_name, 120)
+        self.day_trader = DayTrader(market_name, 150)
 
-    def is_low_point(self, trader):
-        if trader.candles[1].is_yangbong() == False and (trader.candles[0].trade_price > trader.candles[1].trade_price) and (trader.candles[0].candle_acc_trade_volume > (trader.candles[1].candle_acc_trade_volume * 1.5)):
-            return True
+
+    def good_pattern_2021_6month(self):
+        stdev = self.minute60_trader.get_bollinger_bands_standard_deviation()
+        high_band = self.minute60_trader.ma(20) + (stdev * 2)
+        low_band = self.minute60_trader.ma(20) - (stdev * 2)
+        if self.get_margin(high_band, low_band) <= 8:
+            if self.minute60_trader.candles[0].trade_price >= high_band:
+                return True
+        return False
+
 
     def find_best_markets(self, market_group_name):
         market_name_list = []
@@ -132,75 +124,118 @@ class UpbitMarket(BaseMarket):
             is_write_db = False
 
             try:
-                print('')
                 print('checking...', market_name)
                 self.init_traders(market_name)
                 mail_to = market_name + ':'    
-                mail_to = mail_to + ' => ' + str(self.minute15_trader.candles[0].trade_price)
+                mail_to = mail_to + ' => ' + str(self.minute60_trader.candles[0].trade_price)
 
-                # if self.day_trader.is_pre_candle_yangbong() == False:
-                #     continue
-
-                # if self.minute240_trader.is_ma_growup() == False:
-                #     continue
-
-                # if self.minute30_trader.is_goup_with_volume():
-                #     print(' 30_goup_with_volume ')
-                #     mail_to = mail_to + ' 30_goup_with_volume '
-                #     is_buy = True
-                #     is_write_db = True
-
-                # if self.minute60_trader.is_goup_with_volume():
-                #     print(' 60_goup_with_volume ')
-                #     mail_to = mail_to + ' 60_goup_with_volume '
-                #     is_buy = True
-                #     is_write_db = True
-                      
-                if self.minute10_trader.is_golden_cross(2) and self.minute10_trader.is_ma_growup():
-                    if  self.is_sub_trader_growup(self.minute30_trader, 4) and self.is_third_trader_growup(self.minute240_trader, 7):
-                        print(' +10min ')
-                        mail_to = mail_to + ' +10min cross margin : ' + str(self.minute10_trader.get_ma_margin())
+                if self.day_trader.check_pattern():
+                    if self.minute240_trader.check_pattern2():
+                        print(' +240min ')
+                        mail_to = mail_to + ' 240min! '
                         is_buy = True
-                        is_write_db = True
 
-                if self.minute15_trader.is_golden_cross(2) and self.minute15_trader.is_ma_growup():
-                    if self.is_sub_trader_growup(self.minute30_trader, 5) and self.is_third_trader_growup(self.minute240_trader, 7):
-                        print(' +15min ')
-                        mail_to = mail_to + ' +15min cross margin : ' + str(self.minute15_trader.get_ma_margin())
-                        is_buy = True
-                        is_write_db = True
+                    # if self.minute60_trader.check_pattern():
+                    #     print(' +60min ')
+                    #     mail_to = mail_to + ' 60min!' 
+                    #     is_buy = True
 
-                if self.minute30_trader.is_golden_cross(3) and self.minute30_trader.is_ma_growup():
-                    if self.is_sub_trader_growup(self.minute60_trader, 5) and self.is_third_trader_growup(self.minute240_trader, 7):
-                        print(' +30min ')
-                        mail_to = mail_to + ' +30min cross margin : ' + str(self.minute30_trader.get_ma_margin())
-                        is_buy = True
-                        is_write_db = True
+                    # if self.minute30_trader.check_pattern():
+                    #     print(' +30min ')
+                    #     mail_to = mail_to + ' 30min!' 
+                    #     is_buy = True
 
-                # if self.is_trader_growup(self.minute240_trader) :
-                #     print(' +240min ')
-                #     mail_to = mail_to + ' +240min '
-                #     is_buy = True
 
-                # if self.is_trader_growup(self.minute60_trader, 0.3):
-                #     if self.is_ma_growup_long(self.minute3_trader) and self.is_ma_growup_long(self.minute5_trader) and self.is_ma_growup_long(self.minute10_trader) and self.is_ma_growup_long(self.minute15_trader) and self.is_ma_growup_long(self.minute30_trader) : 
-                #         print(' +60min convergence!')
-                #         mail_to = mail_to + ' +60min convergence! '
+                # if self.is_main_trader_growup(self.minute5_trader, 12):
+                #     if self.is_sub_trader_growup(self.minute15_trader) and self.is_third_trader_growup(self.minute30_trader, 5):
+                #         print(' +5min ')
+                #         if self.minute15_trader.is_ma50_over_than_ma15():
+                #             mail_to = mail_to + ' 15min : ' + '+' + str(self.minute5_trader.get_ma_margin())
+                #         else:
+                #             mail_to = mail_to + ' 15min : ' + '-' + str(self.minute5_trader.get_ma_margin())
                 #         is_buy = True
-                #         is_write_db = True
+                
+                # if self.is_main_trader_growup(self.minute5_trader, 0.5, 55):
+                #     if self.is_sub_trader_growup(self.minute15_trader) and self.is_third_trader_growup(self.minute30_trader, 5):
+                #         print(' +15min ')
+                #         if self.minute5_trader.is_ma50_over_than_ma15():
+                #             mail_to = mail_to + ' 5min : ' + '+' + str(self.minute15_trader.get_ma_margin())
+                #         else:
+                #             mail_to = mail_to + ' 5min : ' + '-' + str(self.minute15_trader.get_ma_margin())
+                #         is_buy = True
+                 
+                # if self.is_main_trader_growup(self.minute15_trader, 1, 35):
+                #     if self.is_sub_trader_growup(self.minute30_trader) and self.is_third_trader_growup(self.minute60_trader, 7):
+                #         print(' +15min ')
+                #         if self.minute15_trader.is_ma50_over_than_ma15():
+                #             mail_to = mail_to + ' 15min : ' + '+' + str(self.minute15_trader.get_ma_margin())
+                #         else:
+                #             mail_to = mail_to + ' 15min : ' + '-' + str(self.minute15_trader.get_ma_margin())
+                #         is_buy = True
 
-                # if self.day_trader.is_goup_with_volume():
-                #     print(' +day ')
-                #     mail_to = mail_to + ' +day goup_with_volume '
+                # if self.is_main_trader_growup(self.minute30_trader, 1.2, 23):
+                #     if self.day_trader.candles[1].is_yangbong():
+                #         print(' +30min ')
+                #         if self.minute30_trader.is_ma50_over_than_ma15():
+                #             mail_to = mail_to + ' 30min : ' + '+' + str(self.minute30_trader.get_ma_margin())
+                #         else:
+                #             mail_to = mail_to + ' 30min : ' + '-' + str(self.minute30_trader.get_ma_margin())
+                #         is_buy = True
+
+                # if self.is_main_trader_growup(self.minute60_trader, 1.3, 15):
+                #     if self.day_trader.candles[1].is_yangbong():
+                #         print(' +60min ')
+                #         if self.minute60_trader.is_ma50_over_than_ma15():
+                #             mail_to = mail_to + ' 60min : ' + '+' + str(self.minute60_trader.get_ma_margin())
+                #         else:
+                #             mail_to = mail_to + ' 60min : ' + '-' + str(self.minute60_trader.get_ma_margin())
+                #         is_buy = True
+
+                # if self.is_main_trader_growup(self.minute240_trader, 2, 8):
+                #     if self.minute240_trader.is_ma50_over_than_ma15() :
+                #         mail_to = mail_to + ' 240min : ' + '+' + str(self.minute240_trader.get_ma_margin())
+                #     else:
+                #         mail_to = mail_to + ' 240min : ' + '-' + str(self.minute240_trader.get_ma_margin())
                 #     is_buy = True
-                #     is_write_db = True
 
-                # if self.minute60_trader.is_goup_with_volume():
-                #     print(' +60 ')
-                #     mail_to = mail_to + ' +60 goup_with_volume '
+
+                # if is_buy :
+                #     if self.minute30_trader.is_ma120_over_than_ma15():
+                #         mail_to = mail_to + ' 30min(120-Line) : ' + '+' + str(self.minute60_trader.get_ma_margin120())
+                #     else:
+                #         mail_to = mail_to + ' 30min(120-Line) : ' + '-' + str(self.minute60_trader.get_ma_margin120())
+
+                #     if self.minute60_trader.is_ma120_over_than_ma15():
+                #         mail_to = mail_to + ' 60min(120-Line) : ' + '+' + str(self.minute60_trader.get_ma_margin120())
+                #     else:
+                #         mail_to = mail_to + ' 60min(120-Line) : ' + '-' + str(self.minute60_trader.get_ma_margin120())
+
+                #     if self.minute240_trader.is_ma120_over_than_ma15():
+                #         mail_to = mail_to + ' 240min(120-Line) : ' + '+' + str(self.minute240_trader.get_ma_margin120())
+                #     else:
+                #         mail_to = mail_to + ' 240min(120-Line) : ' + '-' + str(self.minute240_trader.get_ma_margin120())
+                     
+
+                # if self.minute60_trader.is_ma_growup() and self.minute60_trader.get_ma_margin120() < 0.7 :
+                #     print(' +60min ')
+                #     if self.minute60_trader.is_ma120_over_than_ma15():
+                #         mail_to = mail_to + ' 60min_margin_best : ' + '+' + str(self.minute60_trader.get_ma_margin120())
+                #     else:
+                #         mail_to = mail_to + ' 60min_margin_best : ' + '-' + str(self.minute60_trader.get_ma_margin120())
                 #     is_buy = True
-                #     is_write_db = True
 
+                # if self.minute240_trader.is_ma_growup() and self.minute240_trader.get_ma_margin120() < 1:
+                #     if self.minute240_trader.is_ma120_over_than_ma15() :
+                #         mail_to = mail_to + ' 240min_margin_best : ' + '+' + str(self.minute240_trader.get_ma_margin120())
+                #     else:
+                #         mail_to = mail_to + ' 240min_margin_best : ' + '-' + str(self.minute240_trader.get_ma_margin120())
+                #     is_buy = True
+
+
+                # if self.is_nice_trader(self.minute60_trader):
+                #     print('go to buy')
+                #     is_buy = True
+                
                 if is_write_db:
                     print('write_database')
                     self.write_log(market_name, str(self.minute15_trader.candles[0].trade_price))

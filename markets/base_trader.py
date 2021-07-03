@@ -10,12 +10,8 @@ from . import *
 from .candle import *
 from .calcualtor import *
 from enum import Enum
-
-class CoinState(Enum):
-    UP = 1
-    DOWN = 2
-    MA50_ABOVE_MA15 = 3
-    MA15_ABOVE_MA50 = 4
+import math
+import pandas as pd
 
 class BaseTrader():
     def __init__(self, market_name):
@@ -31,22 +27,44 @@ class BaseTrader():
             temp_cadle = Candle(i, json_candles[i])
             self.candles.append(temp_cadle)
 
+    def get_margin(self, a, b):
+        ma = 0
+        if a > b:
+            ma = ((a - b) / a) * 100
+        else : 
+            ma = ((b - a) / b) * 100
+        return ma
+
     def ma(self, index):
         my_cal = Calculator(self.candles)
         return my_cal.ma(index)
 
     def ma_volume(self, index):
-        total_volume = 0
-        for i in range(1, index):
-            total_volume = total_volume + self.candles[i].candle_acc_trade_volume
-        return total_volume / (index-1)
+        sum = 0
+        for i in range(0, index): 
+            sum = sum + self.candles[i].candle_acc_trade_volume
+        return sum / index
 
     def is_ma_volume_up(self):
         return self.candles[0].candle_acc_trade_volume > self.ma_volume(4) and self.candles[0].is_yangbong()
 
+    def is_pre_volumne_min(self, range_count):
+        vol_list = []
+        for i in range(1, range_count):
+            vol_list.append(self.candles[i].candle_acc_trade_volume)
+
+        min_vol = min(vol_list)
+        return min_vol == self.candles[1].candle_acc_trade_volume
+
+    def get_max_trade_price(self, range_count):
+        trade_price_list = []
+        for i in range(0, range_count):
+            trade_price_list.append(self.candles[i].trade_price)
+        return max(trade_price_list)
+
     def is_ma_growup(self):
         # 기본 바꾸면 안됨.
-        return self.ma(5) > self.ma(15) 
+        return self.ma(5) > self.ma(50) 
     
     def is_ma_growup_lite(self):
         # 기본 바꾸면 안됨.
@@ -74,18 +92,9 @@ class BaseTrader():
             if self.candles[index].get_umbong_rate() >= rate:
                 return True
         return False
-            
-    def is_exist_long_umbong(self, count, rate):
-        for i in range(0, count):
-            if self.is_umbong_candle_long_than(i, rate):
-                return True
-        return False
 
     def is_go_down(self):
         return self.candles[0].trade_price < self.candles[1].trade_price < self.candles[2].trade_price
-
-    def is_pre_candle_yangbong(self):
-        return self.candles[1].is_yangbong()
 
     def get_ma(self, count):
         return self.ma(count)
@@ -93,15 +102,20 @@ class BaseTrader():
     def is_ma50_over_than_ma15(self):
         return self.ma(50) > self.ma(15)
 
-
-    def is_golden_cross(self, cross_margin):
-        return self.is_ma50_over_than_ma15() and self.get_ma_margin() <= cross_margin
+    def is_ma120_over_than_ma15(self):
+        return self.ma(120) > self.ma(15)
         
     def get_ma_margin(self):
         if self.ma(50) > self.ma(15):
             return round(float(((self.ma(50) - self.ma(15)) / self.ma(50)) * 100), 2)
         else:
             return round(float(((self.ma(15) - self.ma(50)) / self.ma(15)) * 100), 2)
+
+    def get_ma_margin120(self):
+        if self.ma(120) > self.ma(15):
+            return round(float(((self.ma(120) - self.ma(15)) / self.ma(120)) * 100), 2)
+        else:
+            return round(float(((self.ma(15) - self.ma(120)) / self.ma(15)) * 100), 2)
 
     def get_ma_print(self):
         if self.ma(50) > self.ma(15):
@@ -111,25 +125,60 @@ class BaseTrader():
             per = str(round(float(((self.ma(15) - self.ma(50)) / self.ma(15)) * 100), 2))
             return str('-' + per + '(%)')
 
-    def set_child_trader(self, child):
-        self.child = child
+    def deviation(self, a, b):
+        if a >= b:
+            return a - b
+        else :
+            return b - a
 
-    def is_growup_chart1(self, mail_list):
-        if self.child == None:
-            print('check : None' )
-            return False
+    def get_bollinger_bands_standard_deviation(self):
+        average20 = self.ma(20)
+        mysum = 0
+        for i in range(0, 20):
+            mysum += (self.deviation(average20, self.candles[i].trade_price) ** 2)
+        avr_dev = mysum / 20
+        return math.sqrt(float(avr_dev))
 
-        if self.is_ma50_over_than_ma15() == False:
-            if self.child.is_ma50_over_than_ma15() == False:
-                print('over :' + self.trader_name)
-                return self.child.is_growup_chart1(mail_list)
+
+    def get_exponential_moving_average(self, start, len):
+        target_trade_price_list = []
+        for item in self.candles[::-1]:
+            target_trade_price_list.append(item.trade_price)
+
+        df = pd.DataFrame(target_trade_price_list)
+        return df.ewm(span=len).mean()[0].tolist()
+
+    def get_exponential_moving_average2(self, start, len):
+        target_trade_price_list = []
+        for i in range(start, len):
+            target_trade_price_list.append(self.candles[i].trade_price)
+
+        a = 2 / (len + 1)
+        x = target_trade_price_list[0]
+        temp = target_trade_price_list[0]
+        i = 0
+        for target_price in target_trade_price_list:
+            if i == 0:
+                continue
             else:
-                if self.child.is_ma_growup() and self.child.get_ma_margin() < 0.15:
-                    print('check :' + self.trader_name)
-                    mail_list[0] = str(' UP! :' + self.trader_name + ' margin : ' +  str(self.child.get_ma_margin()))
-                    return True
+                temp = a * target_price + (1 - a) * temp
+                x += temp
+            i = i + 1
+        return x / (len + 1)
 
-        return False
+    def get_exponential_moving_average3(self, start, len):
+        target_trade_price_list = []
+        for i in range(start, 100):
+            target_trade_price_list.append(self.candles[i].trade_price)
+        df = pd.DataFrame(target_trade_price_list)
+        return df.ewm(span=len, min_periods=len-1).mean()
+
+
+        
+
+
+
+
 
 
     

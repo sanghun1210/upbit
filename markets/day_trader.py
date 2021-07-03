@@ -27,6 +27,7 @@ class DayTrader(BaseTrader):
         self.create_candle_list_from_json(json_candles)
         self.trader_name = 'DayTrader'
 
-    
+    def check_pattern(self):
+        return self.ma_volume(5) > self.ma_volume(15)
 
 
