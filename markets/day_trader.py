@@ -28,6 +28,6 @@ class DayTrader(BaseTrader):
         self.trader_name = 'DayTrader'
 
     def check_pattern(self):
-        return self.ma_volume(5) > self.ma_volume(15)
+        return self.ma_volume(7) > self.ma_volume(21)
 
 

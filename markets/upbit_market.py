@@ -98,7 +98,7 @@ class UpbitMarket(BaseMarket):
         time.sleep(0.1)
         self.minute60_trader = Minute60Trader(market_name, 120)
         time.sleep(0.1)
-        self.minute240_trader = Minute240Trader(market_name, 120)
+        self.minute240_trader = Minute240Trader(market_name, 150)
         time.sleep(0.1)
         self.day_trader = DayTrader(market_name, 150)
 
@@ -129,22 +129,23 @@ class UpbitMarket(BaseMarket):
                 mail_to = market_name + ':'    
                 mail_to = mail_to + ' => ' + str(self.minute60_trader.candles[0].trade_price)
 
-                if self.day_trader.check_pattern():
-                    if self.minute240_trader.check_pattern2():
-                        print(' +240min ')
-                        mail_to = mail_to + ' 240min! '
-                        is_buy = True
+                point = 0
 
-                    # if self.minute60_trader.check_pattern():
-                    #     print(' +60min ')
-                    #     mail_to = mail_to + ' 60min!' 
-                    #     is_buy = True
+                if self.day_trader.check_pattern(): point += 1
+                if self.minute240_trader.check_momentum_range(-7, 7): point += 1
+                if self.minute240_trader.rsi(0, 14) > 50 and self.minute240_trader.rsi(1, 14): point += 1
+                if self.minute60_trader.check_pattern(): point += 1
+                # if self.minute30_trader.check_pattern():
+                #     print(' +30min ')
+                #     point += 1    
 
-                    # if self.minute30_trader.check_pattern():
-                    #     print(' +30min ')
-                    #     mail_to = mail_to + ' 30min!' 
-                    #     is_buy = True
+                if point >= 4:
+                    is_buy = True
 
+                        # if self.minute30_trader.check_pattern():
+                        #     print(' +30min ')
+                        #     mail_to = mail_to + ' 30min!' 
+                        #     is_buy = True
 
                 # if self.is_main_trader_growup(self.minute5_trader, 12):
                 #     if self.is_sub_trader_growup(self.minute15_trader) and self.is_third_trader_growup(self.minute30_trader, 5):

@@ -32,8 +32,8 @@ class Minute30Trader(BaseTrader):
         stdev = self.get_bollinger_bands_standard_deviation()
         high_band = self.ma(20) + (stdev * 2)
         low_band = self.ma(20) - (stdev * 2)
-        if self.get_margin(high_band, low_band) <= 5.5:
-            if self.get_margin(self.ma(12), self.ma(36)) < 1 and self.candles[0].trade_price >= high_band  :
+        if self.get_margin(high_band, low_band) <= 4:
+            if self.ma(5) > self.ma(10) and self.get_margin(self.ma(5), self.ma(60)) < 1 :
                 return True
         return False
 

@@ -28,59 +28,34 @@ class Minute240Trader(BaseTrader):
         self.trader_name = 'Minute240Trader'
         self.cross_margin = 0.8
 
-
     def check_pattern(self):
-        stdev = self.get_bollinger_bands_standard_deviation()
-        high_band = self.ma(20) + (stdev * 2)
-        low_band = self.ma(20) - (stdev * 2)
-        if self.get_margin(high_band, low_band) <= 13:
-            if self.get_margin(self.ma(12), self.ma(48)) < 1.5 and self.candles[0].trade_price >= high_band  :
+        mos = self.get_momentum_list()
+        return mos[0] >= -7 and mos[0] <= 7 
+
+    #MACD선은 기본 매개변수의 경우 5일 이동평균선과 비슷하게 움직이며, 시그널선은 10일 이동평균선과 비슷하게 움직인다. 지표값의 양음을 결정하는 0선은 60일 이동평균선과 비슷한 움직임을 보인다.
+    #0선 위에서의 MACD상승은 신뢰성이 높지만 0선 밑에서의 MACD상승은 신뢰성이 낮다. 0선 위에서의 MACD하락은 주가가 오르는 경우가 많다. 
+    #일봉MACD에서의 속임수를 피하기 위해 주봉의 MACD를, 주봉MACD에서의 속임수를 피하기 위해 월봉MACD를 참조하면 신뢰성이 높아진다. 
+
+    #MACD선은 기본 매개변수의 경우 5일 이동평균선
+    #시그널선은 10일 이동평균선
+    #0선은 60일 이동평균선
+    def check_pattern2(self):
+        macd = self.ma(5)
+        signal = self.ma(10)
+        zero_line = self.ma(60)
+
+        if signal > zero_line :
+            if macd > signal and signal >= zero_line: 
                 return True
         return False
 
-    def get_ewm_ma(self, ewm_list, index):
-        sum = 0
-        for i in range(0, index): 
-            sum = sum + ewm_list[i]
-        return sum / index
+    def check_pattern3(self):
+        ewm12 = self.get_exponential_moving_average4(12)
+        ewm26 = self.get_exponential_moving_average4(26)
+        macd = ewm12-ewm26
+        print(macd[0].tolist())
 
 
-
-    def check_pattern2(self):
-        ewm9 = self.get_exponential_moving_average3(0, 9)
-        # ewm1_9 = self.get_exponential_moving_average(1, 10)
-        ewm12 = self.get_exponential_moving_average3(0, 12)
-        ewm26 = self.get_exponential_moving_average3(0, 26)
-        # ewm1_13 = self.get_exponential_moving_average(1, 13)
-        # ewm1_27 = self.get_exponential_moving_average(1, 27)
-
-        macd = ewm12 - ewm26
-        signal = macd - ewm9
-
-
-        print(signal[0].tolist())
-
-        # print(self.get_ewm_ma(ewm12_list, 12))
-        # print(self.get_ewm_ma(ewm12_list, 26))
-        # print(self.get_ewm_ma(ewm12_list, 12) - self.get_ewm_ma(ewm12_list, 26))
-
-
-
-        # print(ewm0_12)
-        # print(ewm0_26)
-        # print(ewm0_12[11] - ewm0_26[25]) # 455
-        # print(ewm0_9)             # 303
-
-        # macd0 = ewm0_12[11] - ewm0_26[25]
-        # macd1 = ewm1_13[11] - ewm1_27[25]
-
-        # signal0 = ewm0_9[8] 
-        # signal1 = ewm1_9[8]
-
-        # print(signal0, macd0)
-
-        # if signal0 >= macd0 and macd0 > signal1 and macd0 > macd1:
-        #     return True
 
 
 
