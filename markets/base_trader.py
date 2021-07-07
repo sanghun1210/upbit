@@ -140,38 +140,54 @@ class BaseTrader():
         return math.sqrt(float(avr_dev))
 
 
-    def get_exponential_moving_average(self, start, len):
-        target_trade_price_list = []
-        for item in self.candles[::-1]:
-            target_trade_price_list.append(item.trade_price)
+    def momentum(self, index):
+        return ((self.candles[index].trade_price -  self.candles[index + 9].trade_price) / self.candles[index + 9].trade_price) * 100
 
-        df = pd.DataFrame(target_trade_price_list)
-        return df.ewm(span=len).mean()[0].tolist()
+    def momentum2(self, index):
+        return (self.candles[index].trade_price / self.candles[index + 9].trade_price) * 100
 
-    def get_exponential_moving_average2(self, start, len):
-        target_trade_price_list = []
-        for i in range(start, len):
-            target_trade_price_list.append(self.candles[i].trade_price)
+    def get_momentum_list(self):
+        mo_list = []
+        for i in range(0, len(self.candles) - 10):
+            mo_list.append(self.momentum(i))
+        return mo_list
 
-        a = 2 / (len + 1)
-        x = target_trade_price_list[0]
-        temp = target_trade_price_list[0]
-        i = 0
-        for target_price in target_trade_price_list:
-            if i == 0:
-                continue
+    def momentum_ma(self, index):
+        mos = self.get_momentum_list()
+        sum = 0
+        for i in range(0, index): 
+            sum = sum + mos[i]
+        return sum / index
+
+    def check_momentum_range(self, min_mo, max_mo):
+        mos = self.get_momentum_list()
+        return mos[0] <= max_mo and mos[0] >= min_mo
+
+    def rsi(self, index, rsi_range):
+        diff_list = []
+        for i in range(index, rsi_range + index):
+            diff_list.append((self.candles[i].trade_price - self.candles[i + 1].trade_price))
+        
+        #구한 데이터를 기준으로 음의 값을 0으로하는 상승분 데이터와, 양의 값을 0으로 하는 하락분데이터로 나눔
+        upper_sum = 0
+        down_sum = 0
+        for diff_data in diff_list:
+            if diff_data > 0:
+                upper_sum += diff_data
             else:
-                temp = a * target_price + (1 - a) * temp
-                x += temp
-            i = i + 1
-        return x / (len + 1)
+                down_sum += abs(diff_data)
 
-    def get_exponential_moving_average3(self, start, len):
-        target_trade_price_list = []
-        for i in range(start, 100):
-            target_trade_price_list.append(self.candles[i].trade_price)
-        df = pd.DataFrame(target_trade_price_list)
-        return df.ewm(span=len, min_periods=len-1).mean()
+        AU = upper_sum / rsi_range
+        AD = down_sum / rsi_range
+
+        RS = AU / AD
+        RSI = AU/(AU+AD)
+        return RSI * 100
+
+
+
+
+        
 
 
         
