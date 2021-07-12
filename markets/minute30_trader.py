@@ -21,21 +21,15 @@ def get_candle_list(market_name, minute_unit, count) :
 
 
 class Minute30Trader(BaseTrader):
-    def __init__(self, market_name, count):
-        super().__init__(market_name)
+    def __init__(self, market_name, count, src_logger):
+        super().__init__(market_name, src_logger)
         json_candles = get_candle_list(market_name, 30, count)
         self.create_candle_list_from_json(json_candles)
         self.trader_name = 'Minute30Trader'
         self.cross_margin = 0.4
-
-    def check_pattern(self):
-        stdev = self.get_bollinger_bands_standard_deviation()
-        high_band = self.ma(20) + (stdev * 2)
-        low_band = self.ma(20) - (stdev * 2)
-        if self.get_margin(high_band, low_band) <= 4:
-            if self.ma(5) > self.ma(10) and self.get_margin(self.ma(5), self.ma(60)) < 1 :
-                return True
-        return False
+        self.max_bollinger_bands_width = 4
+        self.min_ma = 20
+        self.max_ma = 60
 
     
 

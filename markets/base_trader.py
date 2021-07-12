@@ -14,12 +14,16 @@ import math
 import pandas as pd
 
 class BaseTrader():
-    def __init__(self, market_name):
+    def __init__(self, market_name, src_logger):
         self.market_name = market_name
         self.candles = []
         self.child = None
         self.trader_name = ''
         self.cross_margin = 0.5
+        self.max_bollinger_bands_width = 10
+        self.logger = src_logger
+        self.min_ma = 0
+        self.max_ma = 0
 
     def create_candle_list_from_json(self, json_candles):
         length = len(json_candles)
@@ -184,6 +188,64 @@ class BaseTrader():
         RSI = AU/(AU+AD)
         return RSI * 100
 
+    def get_bollinger_bands_width(self):
+        stdev = self.get_bollinger_bands_standard_deviation()
+        high_band = self.ma(20) + (stdev * 2)
+        low_band = self.ma(20) - (stdev * 2)
+        return self.get_margin(high_band, low_band)
+
+    def get_rsi_check_point(self):
+        point = 0
+        if self.rsi(0, 14) <= 35 or self.rsi(0, 14) >= 75 :
+            self.logger.info('rsi check fail ' + str(self.rsi(0, 14)) )
+            point = point-1
+        elif self.rsi(0, 14) >= 43 :
+            self.logger.info('rsi check success ' + str(self.rsi(0, 14)) )
+            point = point+1
+
+        if self.rsi(0, 14) > self.rsi(1, 14):
+            self.logger.info('rsi(0, 14) rsi(1, 14) ==> ' + str(self.rsi(0, 14)) + ' ' + str(self.rsi(1, 14)))
+            point = point+1     
+        return point
+
+
+    def check_base_pattern(self, max_bol_width):
+        self.logger.info(' self.candles[0].trade_price : ' + str(self.candles[0].trade_price) + 'self.ma(10) : ' + str(self.ma(10)))
+        self.logger.info('self.get_margin(self.ma(5), self.ma(10)) ==> ' + str(self.get_margin(self.ma(5), self.ma(10))))
+        self.logger.info('self.get_bollinger_bands_width() ==> ' + str(self.get_bollinger_bands_width()))
+        point = 0
+
+        mos = self.get_momentum_list()
+        self.logger.info('mos[0] ==> ' + str(mos[0]))
+        point = point + self.get_rsi_check_point()
+        
+        if self.get_bollinger_bands_width() <= max_bol_width:
+            point = point + 1
+        else :
+            point = point - 1 
+
+        if self.ma(self.min_ma) >= self.ma(self.max_ma):
+            point = point + 1
+
+        if self.candles[0].trade_price >= self.ma(10):
+            point = point + 1
+
+        if mos[0] > 15:
+            point = point * 1.2
+        elif mos[0] > 7:
+            point = point 
+        elif mos[0] <= 7 and mos[0] >= -1.2:
+            point = point * 0.7 
+        else:
+            point = 0
+    
+        return point
+
+        
+
+
+
+        
 
 
 

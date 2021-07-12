@@ -9,6 +9,8 @@ from markets.upbit_market import *
 from markets.market_log import *
 from sqlite3 import OperationalError, IntegrityError, ProgrammingError
 
+import logging
+
 DB_name = 'KRW_DB'
 
 def connect_to_db(db=None):
@@ -27,18 +29,26 @@ def get_anaylize_str(stats):
     for stat in stats:
         strlist.append(stat[0] + ' : ' + str(stat[1]))
         stat_count = stat_count + 1
-        if stat_count > 15:
+        if stat_count > 10:
             break;
     return '\r\n'.join(strlist)
 
     
 def main():
     try:
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler = logging.FileHandler('upbit_info.log')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        
         logdb_connection = connect_to_db(DB_name)
         market_log = MarketLog(logdb_connection)
         market_log.create_table()
         while True:
-            upbit_market = UpbitMarket(logdb_connection)
+            upbit_market = UpbitMarket(logdb_connection, logger)
             best_market_names = upbit_market.find_best_markets('KRW')
         
             if int(len(best_market_names)) > 0:
@@ -46,7 +56,7 @@ def main():
                 to_send_mail_str_log = get_anaylize_str(market_log.analyze())
                 send_mail(current_result + '\r\n' + '\r\n' + to_send_mail_str_log, "check result")
                 
-            time.sleep(1000)
+            time.sleep(500)
     except Exception as e:    
         print("raise error ", e)
 if __name__ == "__main__":

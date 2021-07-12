@@ -21,8 +21,10 @@ from .minute3_trader import *
 from .minute1_trader import *
 from .market_log import MarketLog
 
+import logging
+
 class UpbitMarket(BaseMarket):
-    def __init__(self, logdb_connection):
+    def __init__(self, logdb_connection, src_logger):
         super().__init__()
         self.market_group = None
         self.week_trader = None
@@ -35,6 +37,8 @@ class UpbitMarket(BaseMarket):
         self.minute5_trader = None
         self.minute3_trader = None
         self.logdb = logdb_connection
+        self.logger = src_logger
+        self.goup_market = True
 
     def get_markets_all(self) : 
         url = "https://api.upbit.com/v1/market/all"
@@ -74,14 +78,8 @@ class UpbitMarket(BaseMarket):
         else : 
             ma = ((b - a) / b) * 100
         return ma
-
-
-    def is_nice_trader(self, trader):
-        stdev = trader.get_bollinger_bands_standard_deviation()
-        high_band = trader.ma(20) + (stdev * 2)
-        return trader.candles[0].trade_price < high_band and trader.ma(5) > trader.ma(50) and trader.is_max_trade_price(15)        
             
-    def init_traders(self, market_name):
+    def init_traders(self, market_name, src_logger):
         # self.week_trader = WeekTrader(market_name, 5)
         # time.sleep(0.1)
         # self.minute1_trader = Minute1Trader(market_name, 120)
@@ -92,26 +90,15 @@ class UpbitMarket(BaseMarket):
         # time.sleep(0.1)
         # self.minute10_trader = Minute10Trader(market_name, 120)
         # time.sleep(0.1)
-        # self.minute15_trader = Minute15Trader(market_name, 120)
-        # time.sleep(0.1)
-        self.minute30_trader = Minute30Trader(market_name, 120)
+        self.minute15_trader = Minute15Trader(market_name, 120, src_logger)
         time.sleep(0.1)
-        self.minute60_trader = Minute60Trader(market_name, 120)
+        self.minute30_trader = Minute30Trader(market_name, 120, src_logger)
         time.sleep(0.1)
-        self.minute240_trader = Minute240Trader(market_name, 150)
+        self.minute60_trader = Minute60Trader(market_name, 120, src_logger)
         time.sleep(0.1)
-        self.day_trader = DayTrader(market_name, 150)
-
-
-    def good_pattern_2021_6month(self):
-        stdev = self.minute60_trader.get_bollinger_bands_standard_deviation()
-        high_band = self.minute60_trader.ma(20) + (stdev * 2)
-        low_band = self.minute60_trader.ma(20) - (stdev * 2)
-        if self.get_margin(high_band, low_band) <= 8:
-            if self.minute60_trader.candles[0].trade_price >= high_band:
-                return True
-        return False
-
+        self.minute240_trader = Minute240Trader(market_name, 150, src_logger)
+        time.sleep(0.1)
+        self.day_trader = DayTrader(market_name, 150, src_logger)
 
     def find_best_markets(self, market_group_name):
         market_name_list = []
@@ -125,126 +112,51 @@ class UpbitMarket(BaseMarket):
 
             try:
                 print('checking...', market_name)
-                self.init_traders(market_name)
+                self.init_traders(market_name, self.logger)
                 mail_to = market_name + ':'    
-                mail_to = mail_to + ' => ' + str(self.minute60_trader.candles[0].trade_price)
+                mail_to = mail_to 
+
+                self.logger.info(market_name)
+
+                if market_name == 'KRW-BTC':
+                    if self.minute60_trader.ma(5) > self.minute60_trader.ma(10):
+                        is_buy = True
+                        self.goup_market = True
+                        print('go to buy')
+                        mail_to = 'go to buy'
+                    else:
+                        is_buy = True
+                        print('go to sell')
+                        self.goup_market = False
+                        mail_to = 'go to sell uuuuu'
 
                 point = 0
 
-                if self.day_trader.check_pattern(): point += 1
-                if self.minute240_trader.check_momentum_range(-7, 7): point += 1
-                if self.minute240_trader.rsi(0, 14) > 50 and self.minute240_trader.rsi(1, 14): point += 1
-                if self.minute60_trader.check_pattern(): point += 1
-                # if self.minute30_trader.check_pattern():
-                #     print(' +30min ')
-                #     point += 1    
+                point_day = self.day_trader.check_pattern() * 1.4
+                self.logger.info('day_trader result : ' + str(point_day))
+                point240 = self.minute240_trader.check_base_pattern(15)  
+                self.logger.info('minute240_trader result : ' + str(point240))
+                # point60 = self.minute60_trader.check_base_pattern(12) * 0.8
+                # self.logger.info('minute60_trader result : ' + str(point60))
+                point30 = self.minute30_trader.check_base_pattern(7) * 0.5
+                self.logger.info('minute30_trader result : ' + str(point30))
+                # point15 = self.minute15_trader.check_base_pattern(6) * 0.3
+                # self.logger.info('minute15_trader result : ' + str(point15))
+                # point = point_day + point240 + point60 + point30 + point15
+                point = point_day + point240 +  point30
+                self.logger.info('total_poing result : ' + str(point))
 
-                if point >= 4:
-                    is_buy = True
+                self.logger.info('=======================================================================================================')
+                print(point)
 
-                        # if self.minute30_trader.check_pattern():
-                        #     print(' +30min ')
-                        #     mail_to = mail_to + ' 30min!' 
-                        #     is_buy = True
+                if point >= 8.2 :
+                    #log 기록
+                    market_name_list.append(mail_to + ' point :  ' + str(point) + ' current price : ' + str(self.minute240_trader.candles[0].trade_price))
+                    is_write_db = True
 
-                # if self.is_main_trader_growup(self.minute5_trader, 12):
-                #     if self.is_sub_trader_growup(self.minute15_trader) and self.is_third_trader_growup(self.minute30_trader, 5):
-                #         print(' +5min ')
-                #         if self.minute15_trader.is_ma50_over_than_ma15():
-                #             mail_to = mail_to + ' 15min : ' + '+' + str(self.minute5_trader.get_ma_margin())
-                #         else:
-                #             mail_to = mail_to + ' 15min : ' + '-' + str(self.minute5_trader.get_ma_margin())
-                #         is_buy = True
-                
-                # if self.is_main_trader_growup(self.minute5_trader, 0.5, 55):
-                #     if self.is_sub_trader_growup(self.minute15_trader) and self.is_third_trader_growup(self.minute30_trader, 5):
-                #         print(' +15min ')
-                #         if self.minute5_trader.is_ma50_over_than_ma15():
-                #             mail_to = mail_to + ' 5min : ' + '+' + str(self.minute15_trader.get_ma_margin())
-                #         else:
-                #             mail_to = mail_to + ' 5min : ' + '-' + str(self.minute15_trader.get_ma_margin())
-                #         is_buy = True
-                 
-                # if self.is_main_trader_growup(self.minute15_trader, 1, 35):
-                #     if self.is_sub_trader_growup(self.minute30_trader) and self.is_third_trader_growup(self.minute60_trader, 7):
-                #         print(' +15min ')
-                #         if self.minute15_trader.is_ma50_over_than_ma15():
-                #             mail_to = mail_to + ' 15min : ' + '+' + str(self.minute15_trader.get_ma_margin())
-                #         else:
-                #             mail_to = mail_to + ' 15min : ' + '-' + str(self.minute15_trader.get_ma_margin())
-                #         is_buy = True
-
-                # if self.is_main_trader_growup(self.minute30_trader, 1.2, 23):
-                #     if self.day_trader.candles[1].is_yangbong():
-                #         print(' +30min ')
-                #         if self.minute30_trader.is_ma50_over_than_ma15():
-                #             mail_to = mail_to + ' 30min : ' + '+' + str(self.minute30_trader.get_ma_margin())
-                #         else:
-                #             mail_to = mail_to + ' 30min : ' + '-' + str(self.minute30_trader.get_ma_margin())
-                #         is_buy = True
-
-                # if self.is_main_trader_growup(self.minute60_trader, 1.3, 15):
-                #     if self.day_trader.candles[1].is_yangbong():
-                #         print(' +60min ')
-                #         if self.minute60_trader.is_ma50_over_than_ma15():
-                #             mail_to = mail_to + ' 60min : ' + '+' + str(self.minute60_trader.get_ma_margin())
-                #         else:
-                #             mail_to = mail_to + ' 60min : ' + '-' + str(self.minute60_trader.get_ma_margin())
-                #         is_buy = True
-
-                # if self.is_main_trader_growup(self.minute240_trader, 2, 8):
-                #     if self.minute240_trader.is_ma50_over_than_ma15() :
-                #         mail_to = mail_to + ' 240min : ' + '+' + str(self.minute240_trader.get_ma_margin())
-                #     else:
-                #         mail_to = mail_to + ' 240min : ' + '-' + str(self.minute240_trader.get_ma_margin())
-                #     is_buy = True
-
-
-                # if is_buy :
-                #     if self.minute30_trader.is_ma120_over_than_ma15():
-                #         mail_to = mail_to + ' 30min(120-Line) : ' + '+' + str(self.minute60_trader.get_ma_margin120())
-                #     else:
-                #         mail_to = mail_to + ' 30min(120-Line) : ' + '-' + str(self.minute60_trader.get_ma_margin120())
-
-                #     if self.minute60_trader.is_ma120_over_than_ma15():
-                #         mail_to = mail_to + ' 60min(120-Line) : ' + '+' + str(self.minute60_trader.get_ma_margin120())
-                #     else:
-                #         mail_to = mail_to + ' 60min(120-Line) : ' + '-' + str(self.minute60_trader.get_ma_margin120())
-
-                #     if self.minute240_trader.is_ma120_over_than_ma15():
-                #         mail_to = mail_to + ' 240min(120-Line) : ' + '+' + str(self.minute240_trader.get_ma_margin120())
-                #     else:
-                #         mail_to = mail_to + ' 240min(120-Line) : ' + '-' + str(self.minute240_trader.get_ma_margin120())
-                     
-
-                # if self.minute60_trader.is_ma_growup() and self.minute60_trader.get_ma_margin120() < 0.7 :
-                #     print(' +60min ')
-                #     if self.minute60_trader.is_ma120_over_than_ma15():
-                #         mail_to = mail_to + ' 60min_margin_best : ' + '+' + str(self.minute60_trader.get_ma_margin120())
-                #     else:
-                #         mail_to = mail_to + ' 60min_margin_best : ' + '-' + str(self.minute60_trader.get_ma_margin120())
-                #     is_buy = True
-
-                # if self.minute240_trader.is_ma_growup() and self.minute240_trader.get_ma_margin120() < 1:
-                #     if self.minute240_trader.is_ma120_over_than_ma15() :
-                #         mail_to = mail_to + ' 240min_margin_best : ' + '+' + str(self.minute240_trader.get_ma_margin120())
-                #     else:
-                #         mail_to = mail_to + ' 240min_margin_best : ' + '-' + str(self.minute240_trader.get_ma_margin120())
-                #     is_buy = True
-
-
-                # if self.is_nice_trader(self.minute60_trader):
-                #     print('go to buy')
-                #     is_buy = True
-                
                 if is_write_db:
                     print('write_database')
                     self.write_log(market_name, str(self.minute15_trader.candles[0].trade_price))
-
-                if is_buy :
-                    #log 기록
-                    print(mail_to)
-                    market_name_list.append(mail_to)
 
             except Exception as e:
                 print("raise error ", e)
