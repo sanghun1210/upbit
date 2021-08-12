@@ -27,9 +27,10 @@ class Minute30Trader(BaseTrader):
         self.create_candle_list_from_json(json_candles)
         self.trader_name = 'Minute30Trader'
         self.cross_margin = 0.4
-        self.max_bollinger_bands_width = 4
-        self.min_ma = 20
-        self.max_ma = 60
+        self.min_ma = 10
+        self.max_ma = 40
+        self.dif_ma = 0.2
+        self.min_bol_width = 5
 
     
 

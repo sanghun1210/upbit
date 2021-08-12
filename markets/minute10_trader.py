@@ -27,6 +27,10 @@ class Minute10Trader(BaseTrader):
         self.create_candle_list_from_json(json_candles)
         self.trader_name = 'Minute10Trader'
         self.cross_margin = 0.3
+        self.min_ma = 20
+        self.max_ma = 60
+        self.dif_ma = 0.1
+        self.min_bol_width = 4               
 
 
     def is_good_chart(self):

@@ -22,8 +22,10 @@ class BaseTrader():
         self.cross_margin = 0.5
         self.max_bollinger_bands_width = 10
         self.logger = src_logger
+        self.min_bol_width = 0
         self.min_ma = 0
         self.max_ma = 0
+        self.dif_ma = 0
 
     def create_candle_list_from_json(self, json_candles):
         length = len(json_candles)
@@ -42,6 +44,19 @@ class BaseTrader():
     def ma(self, index):
         my_cal = Calculator(self.candles)
         return my_cal.ma(index)
+
+    def ma_from(self, start, index):
+        sum = 0
+        sub_candles = self.candles[start:]
+        for i in range(0, index):
+            sum = sum + sub_candles[0 + i].trade_price
+        return sum / index
+
+    def rsi_ma(self, index):
+        sum = 0
+        for i in range(0, index):
+            sum = sum + self.rsi(i, 14)
+        return sum / index
 
     def ma_volume(self, index):
         sum = 0
@@ -135,14 +150,13 @@ class BaseTrader():
         else :
             return b - a
 
-    def get_bollinger_bands_standard_deviation(self):
-        average20 = self.ma(20)
+    def get_bollinger_bands_standard_deviation(self, bol_range):
+        bol_average = self.ma(bol_range)
         mysum = 0
-        for i in range(0, 20):
-            mysum += (self.deviation(average20, self.candles[i].trade_price) ** 2)
-        avr_dev = mysum / 20
+        for i in range(0, bol_range):
+            mysum += (self.deviation(bol_average, self.candles[i].trade_price) ** 2)
+        avr_dev = mysum / bol_range
         return math.sqrt(float(avr_dev))
-
 
     def momentum(self, index):
         return ((self.candles[index].trade_price -  self.candles[index + 9].trade_price) / self.candles[index + 9].trade_price) * 100
@@ -188,58 +202,14 @@ class BaseTrader():
         RSI = AU/(AU+AD)
         return RSI * 100
 
-    def get_bollinger_bands_width(self):
-        stdev = self.get_bollinger_bands_standard_deviation()
-        high_band = self.ma(20) + (stdev * 2)
-        low_band = self.ma(20) - (stdev * 2)
+    def get_bollinger_bands_width(self, bol_range):
+        stdev = self.get_bollinger_bands_standard_deviation(bol_range)
+        high_band = self.ma(bol_range) + (stdev * 2)
+        low_band = self.ma(bol_range) - (stdev * 2)
         return self.get_margin(high_band, low_band)
 
-    def get_rsi_check_point(self):
-        point = 0
-        if self.rsi(0, 14) <= 35 or self.rsi(0, 14) >= 75 :
-            self.logger.info('rsi check fail ' + str(self.rsi(0, 14)) )
-            point = point-1
-        elif self.rsi(0, 14) >= 43 :
-            self.logger.info('rsi check success ' + str(self.rsi(0, 14)) )
-            point = point+1
-
-        if self.rsi(0, 14) > self.rsi(1, 14):
-            self.logger.info('rsi(0, 14) rsi(1, 14) ==> ' + str(self.rsi(0, 14)) + ' ' + str(self.rsi(1, 14)))
-            point = point+1     
-        return point
 
 
-    def check_base_pattern(self, max_bol_width):
-        self.logger.info(' self.candles[0].trade_price : ' + str(self.candles[0].trade_price) + 'self.ma(10) : ' + str(self.ma(10)))
-        self.logger.info('self.get_margin(self.ma(5), self.ma(10)) ==> ' + str(self.get_margin(self.ma(5), self.ma(10))))
-        self.logger.info('self.get_bollinger_bands_width() ==> ' + str(self.get_bollinger_bands_width()))
-        point = 0
-
-        mos = self.get_momentum_list()
-        self.logger.info('mos[0] ==> ' + str(mos[0]))
-        point = point + self.get_rsi_check_point()
-        
-        if self.get_bollinger_bands_width() <= max_bol_width:
-            point = point + 1
-        else :
-            point = point - 1 
-
-        if self.ma(self.min_ma) >= self.ma(self.max_ma):
-            point = point + 1
-
-        if self.candles[0].trade_price >= self.ma(10):
-            point = point + 1
-
-        if mos[0] > 15:
-            point = point * 1.2
-        elif mos[0] > 7:
-            point = point 
-        elif mos[0] <= 7 and mos[0] >= -1.2:
-            point = point * 0.7 
-        else:
-            point = 0
-    
-        return point
 
         
 

@@ -54,22 +54,11 @@ class UpbitMarket(BaseMarket):
                 selected_markets.append(json_market)
         return selected_markets
 
-    def is_main_trader_growup(self, trader, margin, max_range):
-        return trader.is_ma_growup() and (self.get_margin(trader.get_max_trade_price(max_range), trader.candles[0].trade_price) <= 1)
+    def get_market_filters(self):
+        #대세를 보려면 주봉을 봐야 한다.
+        market_list = ['KRW-UPP', 'KRW-FLOW', 'KRW-AXS', 'KRW-SAND', 'KRW-STX', 'KRW-POLY', 'KRW-FCT2', 'KRW-IOST', 'KRW-AQT', 'KRW-TON', 'KRW-GLM', 'KRW-CRE', 'KRW-REP', 'KRW-XEM', 'KRW-TT', 'KRW-DAWN']
+        return market_list
 
-    def is_sub_trader_growup(self, trader):
-        if trader.is_ma_growup():
-             return True
-        if trader.ma(15) > trader.ma(50):
-            return True
-        return False
-
-    def is_third_trader_growup(self, trader, margin):
-        if trader.ma(15) > trader.ma(50):
-            return True
-        elif trader.ma(50) - trader.ma(15) >= margin:
-            return True
-        return False
 
     def get_margin(self, a, b):
         ma = 0
@@ -78,27 +67,93 @@ class UpbitMarket(BaseMarket):
         else : 
             ma = ((b - a) / b) * 100
         return ma
+
+    
             
     def init_traders(self, market_name, src_logger):
-        # self.week_trader = WeekTrader(market_name, 5)
-        # time.sleep(0.1)
         # self.minute1_trader = Minute1Trader(market_name, 120)
         # time.sleep(0.1)
         # self.minute3_trader = Minute3Trader(market_name, 120)
         # time.sleep(0.1)
-        # self.minute5_trader = Minute5Trader(market_name, 120)
+        # self.minute5_trader = Minute5Trader(market_name, 120, src_logger)
         # time.sleep(0.1)
-        # self.minute10_trader = Minute10Trader(market_name, 120)
-        # time.sleep(0.1)
+        # self.minute10_trader = Minute10Trader(market_name, 120, src_logger)
+        time.sleep(0.1)
         self.minute15_trader = Minute15Trader(market_name, 120, src_logger)
         time.sleep(0.1)
-        self.minute30_trader = Minute30Trader(market_name, 120, src_logger)
+        self.minute30_trader = Minute30Trader(market_name, 80, src_logger)
         time.sleep(0.1)
-        self.minute60_trader = Minute60Trader(market_name, 120, src_logger)
+        self.minute60_trader = Minute60Trader(market_name, 80, src_logger)
         time.sleep(0.1)
-        self.minute240_trader = Minute240Trader(market_name, 150, src_logger)
+        self.minute240_trader = Minute240Trader(market_name, 80, src_logger)
         time.sleep(0.1)
-        self.day_trader = DayTrader(market_name, 150, src_logger)
+        self.day_trader = DayTrader(market_name, 40, src_logger)
+        time.sleep(0.1)
+        self.week_trader = WeekTrader(market_name, 20, src_logger)
+
+    def mov_avr_line_check_point(self, trader, max_margin):
+        if (trader.ma(10) <= trader.ma(40) and self.get_margin(trader.ma(10), trader.ma(40)) <= 0.1) or \
+            (trader.ma(10) > trader.ma(40) and self.get_margin(trader.ma(10), trader.ma(40)) <= max_margin):
+            return 1
+        elif trader.ma(10) > trader.ma(40) :
+            if (trader.ma(5) <= trader.ma(20) and self.get_margin(trader.ma(5), trader.ma(20)) <= 0.1) or \
+                (trader.ma(5) > trader.ma(20) and self.get_margin(trader.ma(5), trader.ma(20)) <= max_margin):
+                return 1
+            elif trader.ma(5) > trader.ma(20):
+                if trader.ma(5) > trader.ma(10) and self.get_margin(trader.ma(5), trader.ma(10)) <= max_margin:
+                    return 1
+        return 0
+
+    def is_nice_trader(self, trader, max_bol_width):
+        self.logger.info('get_bollinger_bands_width(8) ==> ' + str(trader.get_bollinger_bands_width(8)))
+        self.logger.info('self.get_margin(self.ma(5), self.ma(20)) ==> ' + str(self.get_margin(trader.ma(5), trader.ma(20))))
+        self.logger.info('trader.rsi(0, 14), trader.rsi_ma(5), trader.rsi_ma(10)==> ' + str(trader.rsi(0, 14)) + ' ' + str(trader.rsi_ma(5)) + ' ' + str(trader.rsi_ma(10)))
+
+        if (trader.ma(5) <= trader.ma(20) and self.get_margin(trader.ma(5), trader.ma(20)) < 0.3) or \
+            (trader.ma(5) > trader.ma(20) and self.get_margin(trader.ma(5), trader.ma(20)) < 0.5):
+            current_rsi = trader.rsi(0, 14)
+            print('rsi check->')
+            if current_rsi >= 45 and current_rsi <= 60:
+                mos = trader.get_momentum_list()
+                self.logger.info('mos[0], mos[5], mos[8] : '+  str(mos[0]) + ' ' + str(mos[5]) + ' ' + str(mos[8]))
+                print('mos[0], mos[5], mos[8] : '+  str(mos[0]) + ' ' + str(mos[5]) + ' ' + str(mos[8]))
+                print('rsi[0], rsi[1] : '+  str(trader.rsi(0,14)) + ' ' + str(trader.rsi(1,14)))
+                if mos[0] > (mos[3] + 1) and trader.rsi(0, 14) > trader.rsi_ma(3) and trader.candles[0].trade_price > trader.ma(5):
+                    self.mail_to = self.mail_to + 'good pattern'
+                    return True
+        
+        if trader.get_bollinger_bands_width(8) < max_bol_width:
+            stdev = trader.get_bollinger_bands_standard_deviation(8)
+            low_band = trader.ma(8) - (stdev * 2)
+            if low_band >= trader.candles[0].low_price and trader.rsi(0, 14) <= 50:
+                print('it\'s low')
+                self.mail_to = self.mail_to + 'low pattern'
+                return True
+
+    def is_nice_trader60(self, trader, max_bol_width):
+        self.logger.info('get_bollinger_bands_width(8) ==> ' + str(trader.get_bollinger_bands_width(8)))
+        self.logger.info('self.get_margin(self.ma(5), self.ma(20)) ==> ' + str(self.get_margin(trader.ma(5), trader.ma(20))))
+        self.logger.info('trader.rsi(0, 14), trader.rsi_ma(5), trader.rsi_ma(10)==> ' + str(trader.rsi(0, 14)) + ' ' + str(trader.rsi_ma(5)) + ' ' + str(trader.rsi_ma(10)))
+
+        if self.get_margin(trader.ma(5), trader.ma(20)) < 0.4 :
+            current_rsi = trader.rsi(0, 14)
+            print('rsi check->')
+            if current_rsi >= 45 and current_rsi <= 60:
+                mos = trader.get_momentum_list()
+                self.logger.info('mos[0], mos[5], mos[8] : '+  str(mos[0]) + ' ' + str(mos[5]) + ' ' + str(mos[8]))
+                print('mos[0], mos[5], mos[8] : '+  str(mos[0]) + ' ' + str(mos[5]) + ' ' + str(mos[8]))
+                print('rsi[0], rsi[1] : '+  str(trader.rsi(0,14)) + ' ' + str(trader.rsi(1,14)))
+                if mos[0] > (mos[3] + 1) and trader.rsi(0, 14) > trader.rsi_ma(3) and trader.candles[0].trade_price > trader.ma(5):
+                    self.mail_to = self.mail_to + 'good pattern'
+                    return True
+
+        if trader.get_bollinger_bands_width(8) < max_bol_width:
+            stdev = trader.get_bollinger_bands_standard_deviation(8)
+            low_band = trader.ma(8) - (stdev * 2)
+            if low_band >= trader.candles[0].low_price and trader.rsi(0, 14) <= 50:
+                print('it\'s low')
+                self.mail_to = self.mail_to + 'low pattern'
+                return True
 
     def find_best_markets(self, market_group_name):
         market_name_list = []
@@ -110,53 +165,62 @@ class UpbitMarket(BaseMarket):
             is_buy = False
             is_write_db = False
 
+            filters = self.get_market_filters()
+
             try:
                 print('checking...', market_name)
+                self.logger.info('checking... ' +  market_name)
+
                 self.init_traders(market_name, self.logger)
-                mail_to = market_name + ':'    
-                mail_to = mail_to 
+                self.mail_to = market_name + ':'    
+                self.mail_to = self.mail_to 
 
                 self.logger.info(market_name)
 
-                if market_name == 'KRW-BTC':
-                    if self.minute60_trader.ma(5) > self.minute60_trader.ma(10):
+                mos_day = self.day_trader.get_momentum_list()
+                mos_240 = self.minute240_trader.get_momentum_list()
+                mos_60 = self.minute60_trader.get_momentum_list()
+
+                if self.day_trader.candles[0].trade_price >= self.day_trader.ma(10) and self.day_trader.rsi(0, 14) > 50:
+                    self.logger.info('check 240 ======================================')
+                    if self.is_nice_trader(self.minute240_trader, 12):
+                        print('check240_good')
+                        self.mail_to = self.mail_to + ' minute 240 good'
                         is_buy = True
-                        self.goup_market = True
-                        print('go to buy')
-                        mail_to = 'go to buy'
-                    else:
+
+                if self.day_trader.candles[0].trade_price >= self.day_trader.ma(10) and self.day_trader.rsi(0, 14) > 50:
+                    self.logger.info('check 60 ======================================')
+                    if self.is_nice_trader60(self.minute60_trader, 7):
+                        print('check60_good')
+                        self.mail_to = self.mail_to + ' minute 60 good'
                         is_buy = True
-                        print('go to sell')
-                        self.goup_market = False
-                        mail_to = 'go to sell uuuuu'
 
-                point = 0
+                # if self.minute240_trader.candles[0].trade_price >= self.minute240_trader.ma(10) and self.minute240_trader.rsi(0, 14) > 50:
+                #     self.logger.info('check 30 ======================================')
+                #     if self.is_nice_trader(self.minute30_trader, 4):
+                #         print('check30_good')
+                #         self.mail_to = self.mail_to + ' minute 30 good'
+                #         is_buy = True
 
-                point_day = self.day_trader.check_pattern() * 1.4
-                self.logger.info('day_trader result : ' + str(point_day))
-                point240 = self.minute240_trader.check_base_pattern(15)  
-                self.logger.info('minute240_trader result : ' + str(point240))
-                # point60 = self.minute60_trader.check_base_pattern(12) * 0.8
-                # self.logger.info('minute60_trader result : ' + str(point60))
-                point30 = self.minute30_trader.check_base_pattern(7) * 0.5
-                self.logger.info('minute30_trader result : ' + str(point30))
-                # point15 = self.minute15_trader.check_base_pattern(6) * 0.3
-                # self.logger.info('minute15_trader result : ' + str(point15))
-                # point = point_day + point240 + point60 + point30 + point15
-                point = point_day + point240 +  point30
-                self.logger.info('total_poing result : ' + str(point))
 
-                self.logger.info('=======================================================================================================')
-                print(point)
+                # if self.minute60_trader.candles[0].trade_price >= self.minute60_trader.ma(5) and self.minute60_trader.rsi(0,14) > 50:
+                #     if self.is_nice_trader(self.minute15_trader):
+                #         print('check15_good')
+                #         mail_to = mail_to + ' minute 15 good'
+                #         is_buy = True
 
-                if point >= 8.2 :
-                    #log 기록
-                    market_name_list.append(mail_to + ' point :  ' + str(point) + ' current price : ' + str(self.minute240_trader.candles[0].trade_price))
-                    is_write_db = True
+                # temp_point = self.check30_point() * 0.7
+                # print('check30_point :' + str(temp_point))
+                # self.logger.info('check30_point :' + str(temp_point))
+                # point += temp_point
 
+                    
                 if is_write_db:
                     print('write_database')
-                    self.write_log(market_name, str(self.minute15_trader.candles[0].trade_price))
+                    self.write_log(market_name, str(self.minute30_trader.candles[0].trade_price))
+
+                if is_buy :
+                    market_name_list.append(self.mail_to)
 
             except Exception as e:
                 print("raise error ", e)

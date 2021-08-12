@@ -21,11 +21,17 @@ def get_candle_list(market_name, minute_unit, count) :
 
 
 class Minute5Trader(BaseTrader):
-    def __init__(self, market_name, count):
-        super().__init__(market_name)
+    def __init__(self, market_name, count, src_logger):
+        super().__init__(market_name, src_logger)
         json_candles = get_candle_list(market_name, 5, count)
         self.create_candle_list_from_json(json_candles)
         self.trader_name = 'Minute5Trader'
+        self.trader_name = 'Minute10Trader'
+        self.cross_margin = 0.3
+        self.min_ma = 20
+        self.max_ma = 60
+        self.dif_ma = 0.1
+        self.min_bol_width = 2          
 
     def is_good_chart(self):
         if self.is_growup(4) and self.is_pumped(0, 4) == False and self.is_pumped(1, 4) == False:

@@ -27,9 +27,6 @@ class Minute240Trader(BaseTrader):
         self.create_candle_list_from_json(json_candles)
         self.trader_name = 'Minute240Trader'
         self.cross_margin = 0.8
-        self.min_ma = 5
-        self.max_ma = 10
-            
 
     
 
