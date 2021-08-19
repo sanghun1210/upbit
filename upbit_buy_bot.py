@@ -56,7 +56,7 @@ def main():
                 to_send_mail_str_log = get_anaylize_str(market_log.analyze())
                 send_mail(current_result + '\r\n' + '\r\n' + to_send_mail_str_log, "check result")
                 
-            time.sleep(500)
+            time.sleep(700)
     except Exception as e:    
         print("raise error ", e)
 if __name__ == "__main__":

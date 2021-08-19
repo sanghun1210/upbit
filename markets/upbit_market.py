@@ -78,17 +78,17 @@ class UpbitMarket(BaseMarket):
         # self.minute5_trader = Minute5Trader(market_name, 120, src_logger)
         # time.sleep(0.1)
         # self.minute10_trader = Minute10Trader(market_name, 120, src_logger)
-        time.sleep(0.1)
-        self.minute15_trader = Minute15Trader(market_name, 120, src_logger)
-        time.sleep(0.1)
-        self.minute30_trader = Minute30Trader(market_name, 80, src_logger)
-        time.sleep(0.1)
-        self.minute60_trader = Minute60Trader(market_name, 80, src_logger)
-        time.sleep(0.1)
-        self.minute240_trader = Minute240Trader(market_name, 80, src_logger)
-        time.sleep(0.1)
-        self.day_trader = DayTrader(market_name, 40, src_logger)
-        time.sleep(0.1)
+        # time.sleep(0.1)
+        # self.minute15_trader = Minute15Trader(market_name, 120, src_logger)
+        # time.sleep(0.1)
+        self.minute30_trader = Minute30Trader(market_name, 100, src_logger)
+        time.sleep(0.15)
+        self.minute60_trader = Minute60Trader(market_name, 100, src_logger)
+        time.sleep(0.15)
+        self.minute240_trader = Minute240Trader(market_name, 100, src_logger)
+        time.sleep(0.15)
+        self.day_trader = DayTrader(market_name, 100, src_logger)
+        time.sleep(0.15)
         self.week_trader = WeekTrader(market_name, 20, src_logger)
 
     def mov_avr_line_check_point(self, trader, max_margin):
@@ -105,54 +105,29 @@ class UpbitMarket(BaseMarket):
         return 0
 
     def is_nice_trader(self, trader, max_bol_width):
-        self.logger.info('get_bollinger_bands_width(8) ==> ' + str(trader.get_bollinger_bands_width(8)))
+        current_rsi = trader.get_current_rsi()
+        mos = trader.get_momentum_list()
+
+        self.logger.info('get_bollinger_bands_width(20) ==> ' + str(trader.get_bollinger_bands_width(20)))
         self.logger.info('self.get_margin(self.ma(5), self.ma(20)) ==> ' + str(self.get_margin(trader.ma(5), trader.ma(20))))
-        self.logger.info('trader.rsi(0, 14), trader.rsi_ma(5), trader.rsi_ma(10)==> ' + str(trader.rsi(0, 14)) + ' ' + str(trader.rsi_ma(5)) + ' ' + str(trader.rsi_ma(10)))
+        self.logger.info('current rsi ==> ' + str(current_rsi))
+        self.logger.info('mos[0], trader.momentum_ma(4) : '+  str(mos[0]) + ', ' + str(trader.momentum_ma(4)))
 
         if (trader.ma(5) <= trader.ma(20) and self.get_margin(trader.ma(5), trader.ma(20)) < 0.3) or \
-            (trader.ma(5) > trader.ma(20) and self.get_margin(trader.ma(5), trader.ma(20)) < 0.5):
-            current_rsi = trader.rsi(0, 14)
+            (trader.ma(5) > trader.ma(20) and self.get_margin(trader.ma(5), trader.ma(20)) <= 1.1):
             print('rsi check->')
-            if current_rsi >= 45 and current_rsi <= 60:
-                mos = trader.get_momentum_list()
-                self.logger.info('mos[0], mos[5], mos[8] : '+  str(mos[0]) + ' ' + str(mos[5]) + ' ' + str(mos[8]))
-                print('mos[0], mos[5], mos[8] : '+  str(mos[0]) + ' ' + str(mos[5]) + ' ' + str(mos[8]))
-                print('rsi[0], rsi[1] : '+  str(trader.rsi(0,14)) + ' ' + str(trader.rsi(1,14)))
-                if mos[0] > (mos[3] + 1) and trader.rsi(0, 14) > trader.rsi_ma(3) and trader.candles[0].trade_price > trader.ma(5):
-                    self.mail_to = self.mail_to + 'good pattern'
-                    return True
-        
-        if trader.get_bollinger_bands_width(8) < max_bol_width:
-            stdev = trader.get_bollinger_bands_standard_deviation(8)
-            low_band = trader.ma(8) - (stdev * 2)
-            if low_band >= trader.candles[0].low_price and trader.rsi(0, 14) <= 50:
-                print('it\'s low')
-                self.mail_to = self.mail_to + 'low pattern'
-                return True
-
-    def is_nice_trader60(self, trader, max_bol_width):
-        self.logger.info('get_bollinger_bands_width(8) ==> ' + str(trader.get_bollinger_bands_width(8)))
-        self.logger.info('self.get_margin(self.ma(5), self.ma(20)) ==> ' + str(self.get_margin(trader.ma(5), trader.ma(20))))
-        self.logger.info('trader.rsi(0, 14), trader.rsi_ma(5), trader.rsi_ma(10)==> ' + str(trader.rsi(0, 14)) + ' ' + str(trader.rsi_ma(5)) + ' ' + str(trader.rsi_ma(10)))
-
-        if self.get_margin(trader.ma(5), trader.ma(20)) < 0.4 :
-            current_rsi = trader.rsi(0, 14)
-            print('rsi check->')
-            if current_rsi >= 45 and current_rsi <= 60:
-                mos = trader.get_momentum_list()
-                self.logger.info('mos[0], mos[5], mos[8] : '+  str(mos[0]) + ' ' + str(mos[5]) + ' ' + str(mos[8]))
-                print('mos[0], mos[5], mos[8] : '+  str(mos[0]) + ' ' + str(mos[5]) + ' ' + str(mos[8]))
-                print('rsi[0], rsi[1] : '+  str(trader.rsi(0,14)) + ' ' + str(trader.rsi(1,14)))
-                if mos[0] > (mos[3] + 1) and trader.rsi(0, 14) > trader.rsi_ma(3) and trader.candles[0].trade_price > trader.ma(5):
+            if current_rsi >= 45 and current_rsi <= 62:
+                print('mos[0], mos[5]: '+  str(mos[0]) + ', ' + str(mos[5]))
+                if mos[0] > trader.momentum_ma(4) >= trader.momentum_ma(7)  and trader.candles[0].trade_price > trader.ma(5):
                     self.mail_to = self.mail_to + 'good pattern'
                     return True
 
-        if trader.get_bollinger_bands_width(8) < max_bol_width:
-            stdev = trader.get_bollinger_bands_standard_deviation(8)
-            low_band = trader.ma(8) - (stdev * 2)
-            if low_band >= trader.candles[0].low_price and trader.rsi(0, 14) <= 50:
+        if trader.get_bollinger_bands_width(20) < max_bol_width:
+            stdev = trader.get_bollinger_bands_standard_deviation(20)
+            low_band = trader.ma(20) - (stdev * 2)
+            if low_band >= trader.candles[0].low_price and current_rsi <= 45:
                 print('it\'s low')
-                self.mail_to = self.mail_to + 'low pattern'
+                self.mail_to = self.mail_to + 'low pattern by mos => ' + str(mos[0]) + ' rsi => ' + str(current_rsi) 
                 return True
 
     def find_best_markets(self, market_group_name):
@@ -176,44 +151,36 @@ class UpbitMarket(BaseMarket):
                 self.mail_to = self.mail_to 
 
                 self.logger.info(market_name)
-
+                mos_week = self.week_trader.get_momentum_list()
                 mos_day = self.day_trader.get_momentum_list()
                 mos_240 = self.minute240_trader.get_momentum_list()
-                mos_60 = self.minute60_trader.get_momentum_list()
 
-                if self.day_trader.candles[0].trade_price >= self.day_trader.ma(10) and self.day_trader.rsi(0, 14) > 50:
+                if self.week_trader.candles[0].trade_price >= self.week_trader.ma(10) and self.week_trader.get_current_rsi() >= 53: 
+                    self.logger.info('mos_week[0], mos_week[1]==> ' + str(mos_week[0]) + ', ' + str(mos_week[1]) )
+                    self.logger.info('week_trader.rsi(0, 14)' + str(self.week_trader.get_current_rsi()))
                     self.logger.info('check 240 ======================================')
                     if self.is_nice_trader(self.minute240_trader, 12):
-                        print('check240_good')
-                        self.mail_to = self.mail_to + ' minute 240 good'
+                        print('check240!')
+                        self.mail_to = self.mail_to + ' minute240! ' 
                         is_buy = True
 
-                if self.day_trader.candles[0].trade_price >= self.day_trader.ma(10) and self.day_trader.rsi(0, 14) > 50:
+                if self.day_trader.candles[0].trade_price >= self.day_trader.ma(10) and self.day_trader.get_current_rsi() >= 53: 
+                    self.logger.info('mos_day[0], mos_day[1]==> ' + str(mos_day[0]) + ', ' + str(mos_day[1]) )
+                    self.logger.info('day_trader.rsi(0, 14)' + str(self.day_trader.get_current_rsi()))
                     self.logger.info('check 60 ======================================')
-                    if self.is_nice_trader60(self.minute60_trader, 7):
-                        print('check60_good')
-                        self.mail_to = self.mail_to + ' minute 60 good'
+                    if self.is_nice_trader(self.minute60_trader, 5):
+                        print('check60!')
+                        self.mail_to = self.mail_to + ' minute60! '
                         is_buy = True
 
-                # if self.minute240_trader.candles[0].trade_price >= self.minute240_trader.ma(10) and self.minute240_trader.rsi(0, 14) > 50:
-                #     self.logger.info('check 30 ======================================')
-                #     if self.is_nice_trader(self.minute30_trader, 4):
-                #         print('check30_good')
-                #         self.mail_to = self.mail_to + ' minute 30 good'
-                #         is_buy = True
-
-
-                # if self.minute60_trader.candles[0].trade_price >= self.minute60_trader.ma(5) and self.minute60_trader.rsi(0,14) > 50:
-                #     if self.is_nice_trader(self.minute15_trader):
-                #         print('check15_good')
-                #         mail_to = mail_to + ' minute 15 good'
-                #         is_buy = True
-
-                # temp_point = self.check30_point() * 0.7
-                # print('check30_point :' + str(temp_point))
-                # self.logger.info('check30_point :' + str(temp_point))
-                # point += temp_point
-
+                if self.minute240_trader.candles[0].trade_price >= self.minute240_trader.ma(10) and self.minute240_trader.get_current_rsi() >= 53: 
+                    self.logger.info('mos_240[0], mos_240[1]==> ' + str(mos_240[0]) + ', ' + str(mos_240[1]) )
+                    self.logger.info('minute240_trader.rsi(0, 14)' + str(self.minute240_trader.get_current_rsi()))
+                    self.logger.info('check 30 ======================================')
+                    if self.is_nice_trader(self.minute30_trader, 3.5):
+                        print('check30!')
+                        self.mail_to = self.mail_to + ' minute30! '
+                        is_buy = True
                     
                 if is_write_db:
                     print('write_database')
